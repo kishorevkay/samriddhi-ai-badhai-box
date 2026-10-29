@@ -1,0 +1,18 @@
+# secrets and local-only files: never commit
+HANDOVER-ENV.txt
+.env*
+.vercel/
+node_modules/
+.DS_Store
+# drafts and working notes (not part of the site)
+COPY_SOURCE*.txt
+MOBILE_TODO.md
+FEEDBACK_*.md
+design_board.html
+sync_tiles.sh
+# unused drafts (old cartoon cut-outs, spare logo files)
+assets/aunty*.png
+assets/girl.png
+assets/logo_master.png
+assets/box/box_full.webp
+assets/upgrad-logo-red.svg

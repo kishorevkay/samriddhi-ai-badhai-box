@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>AI Badhai Box · Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --red: #8E1730; --red2: #7A1128; --ink: #2A1418; --soft: #7A5C58; --cream: #FBF4E8; --paper: #FFFDF8; --line: #EADBC4; --gold: #D9A84A; --ok: #1E6B3A; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font: 14px/1.45 Inter, system-ui, sans-serif; }
+  header { background: var(--red); color: var(--cream); padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  header h1 { font: 800 22px/1 "Playfair Display", serif; margin: 0; }
+  header small { opacity: .75; font-size: 12px; }
+  .btn { border: 1.5px solid var(--gold); background: transparent; color: inherit; border-radius: 999px; padding: 8px 16px; font: 600 13px Inter, sans-serif; cursor: pointer; }
+  .btn.solid { background: var(--red); color: var(--cream); }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 28px 60px; }
+  .login { max-width: 360px; margin: 12vh auto; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 28px; text-align: center; }
+  .login h2 { font: 800 24px "Playfair Display", serif; color: var(--red); margin: 0 0 6px; }
+  .login input { width: 100%; font: 600 20px Inter; letter-spacing: .3em; text-align: center; padding: 12px; border: 1.5px solid var(--line); border-radius: 12px; margin: 16px 0 12px; }
+  .err { color: #B3261E; font-weight: 600; min-height: 20px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .kpi b { display: block; font: 800 28px/1.1 "Playfair Display", serif; color: var(--red); }
+  .kpi span { color: var(--soft); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+  .bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 22px 0 12px; }
+  .bar input, .bar select { font: 500 14px Inter; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+  .bar input { flex: 1; min-width: 200px; }
+  .wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; }
+  table { border-collapse: collapse; width: 100%; min-width: 1100px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--soft); background: #FBF2E2; position: sticky; top: 0; }
+  td .sub { color: var(--soft); font-size: 12px; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #F3E6CF; color: #6B4A12; }
+  .tag.pay { background: #E3F2E8; color: var(--ok); }
+  .tag.curated { background: #FBE7EA; color: var(--red); }
+  .empty { padding: 40px; text-align: center; color: var(--soft); }
+  .note { max-width: 260px; color: var(--soft); font-size: 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>AI Badhai Box · Leads</h1><small id="stamp">Samriddhi On. Sawaal Gone. · upGrad Diwali 2026</small></div>
+  <div id="actions" hidden><button class="btn" id="refresh">Refresh</button> <button class="btn" id="csv">Download CSV</button> <button class="btn" id="out">Log out</button></div>
+</header>
+
+<main>
+  <form class="login" id="login">
+    <h2>Admin</h2>
+    <div>Enter the admin PIN</div>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="Admin PIN">
+    <div class="err" id="err" aria-live="polite"></div>
+    <button class="btn solid" type="submit">Open dashboard</button>
+  </form>
+
+  <section id="dash" hidden>
+    <div class="kpis" id="kpis"></div>
+    <div class="bar">
+      <input id="q" type="search" placeholder="Search name, mobile, email">
+      <select id="fStage"><option value="">All stages</option><option value="details">Filled details</option><option value="curated">Saw their box</option><option value="pay">Pressed pay</option></select>
+      <select id="fMode"><option value="">For anyone</option><option value="self">For me</option><option value="other">Someone I love</option></select>
+      <select id="fDomain"><option value="">All domains</option><option>Data &amp; AI</option><option>Tech &amp; AI</option><option>Marketing &amp; AI</option><option>Management &amp; AI</option></select>
+    </div>
+    <div class="wrap"><table>
+      <thead><tr><th>When (IST)</th><th>Stage</th><th>For</th><th>Domain</th><th>Buyer</th><th>Recipient</th><th>Diwali note</th><th>Device · source</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var KEY = "badhai_admin_pin", pin = "", leads = [], timer = 0;
+  var STAGE = { details: "Filled details", curated: "Saw their box", pay: "Pressed pay" };
+  function store(v){ try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY); } catch (e) {} }
+  function saved(){ try { return sessionStorage.getItem(KEY) || ""; } catch (e) { return ""; } }
+  function esc(t){ return String(t == null ? "" : t).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function ist(iso){ if (!iso) return ""; return new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+
+  function load(){
+    return fetch("/api/admin", { headers: { "x-admin-pin": pin }, cache: "no-store" }).then(function(r){
+      if (r.status === 401) throw new Error("Wrong PIN");
+      if (!r.ok) throw new Error("Could not load leads (" + r.status + ")");
+      return r.json();
+    }).then(function(d){ leads = d.leads || []; $("#stamp").textContent = leads.length + " leads · updated " + ist(d.at); render(); });
+  }
+  function show(on){ $("#login").hidden = on; $("#dash").hidden = !on; $("#actions").hidden = !on; }
+  function start(p){
+    pin = p; $("#err").textContent = "";
+    return load().then(function(){ store(pin); show(true); clearInterval(timer); timer = setInterval(function(){ if (!document.hidden) load().catch(function(){}); }, 30000); })
+      .catch(function(e){ store(""); show(false); $("#err").textContent = e.message; });
+  }
+
+  function filtered(){
+    var q = $("#q").value.trim().toLowerCase(), st = $("#fStage").value, md = $("#fMode").value, dm = $("#fDomain").value;
+    return leads.filter(function(l){
+      if (st && l.stage !== st) return false;
+      if (md && l.mode !== md) return false;
+      if (dm && l.domain !== dm) return false;
+      if (!q) return true;
+      var hay = [l.buyer && l.buyer.name, l.buyer && l.buyer.phone, l.buyer && l.buyer.email, l.recipient && l.recipient.name, l.recipient && l.recipient.phone, l.recipient && l.recipient.email].join(" ").toLowerCase();
+      return hay.indexOf(q) > -1;
+    });
+  }
+  function render(){
+    var n = function(f){ return leads.filter(f).length; };
+    var k = [["Leads", leads.length], ["For me", n(function(l){ return l.mode === "self"; })], ["Someone I love", n(function(l){ return l.mode === "other"; })],
+      ["Saw their box", n(function(l){ return l.stage === "curated" || l.stage === "pay"; })], ["Pressed pay", n(function(l){ return l.stage === "pay"; })]];
+    ["Data & AI", "Tech & AI", "Marketing & AI", "Management & AI"].forEach(function(d){ k.push([d, n(function(l){ return l.domain === d; })]); });
+    $("#kpis").innerHTML = k.map(function(x){ return '<div class="kpi"><b>' + x[1] + '</b><span>' + esc(x[0]) + '</span></div>'; }).join("");
+    var rows = filtered();
+    $("#rows").innerHTML = rows.length ? rows.map(function(l){
+      var b = l.buyer || {}, r = l.recipient;
+      return "<tr><td>" + esc(ist(l.created)) + (l.updated && l.updated !== l.created ? '<div class="sub">last ' + esc(ist(l.updated)) + "</div>" : "") + "</td>" +
+        '<td><span class="tag ' + esc(l.stage) + '">' + esc(STAGE[l.stage] || l.stage) + "</span></td>" +
+        "<td>" + (l.mode === "other" ? "Someone I love" : "Me") + "</td>" +
+        "<td>" + esc(l.domain || "—") + "</td>" +
+        "<td>" + esc(b.name) + '<div class="sub">' + esc(b.phone) + "<br>" + esc(b.email) + "</div></td>" +
+        "<td>" + (r ? esc(r.name) + '<div class="sub">' + esc(r.phone) + "<br>" + esc(r.email) + "</div>" : '<span class="sub">—</span>') + "</td>" +
+        '<td class="note">' + esc(r && r.note) + "</td>" +
+        '<td class="sub">' + esc(l.device) + (l.source ? "<br>" + esc(l.source) : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="8" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
+  }
+  function csv(){
+    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id"];
+    var cell = function(v){ v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
+    var lines = [cols.join(",")].concat(filtered().map(function(l){
+      var b = l.buyer || {}, r = l.recipient || {};
+      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id].map(cell).join(",");
+    }));
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+    a.download = "ai-badhai-box-leads-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  $("#login").addEventListener("submit", function(e){ e.preventDefault(); start($("#pin").value.trim()); });
+  ["#q", "#fStage", "#fMode", "#fDomain"].forEach(function(s){ $(s).addEventListener("input", render); });
+  $("#refresh").addEventListener("click", function(){ load().catch(function(e){ alert(e.message); }); });
+  $("#csv").addEventListener("click", csv);
+  $("#out").addEventListener("click", function(){ store(""); pin = ""; leads = []; clearInterval(timer); show(false); $("#pin").value = ""; });
+  if (saved()) start(saved());
+})();
+</script>
+</body>
+</html>

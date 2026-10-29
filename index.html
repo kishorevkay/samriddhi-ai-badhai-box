@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI Badhai Box by upGrad · Samriddhi On. Sawaal Gone.</title>
+<meta name="description" content="AI Badhai Box by upGrad: a personalised AI upskilling gift, curated around the next career move. From ₹249.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Yatra+One&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<canvas id="cursorFx" aria-hidden="true"></canvas>
+
+<!-- HERO · Kratee's v3 layout: two relatives ask the visitor career questions around the AI BADHAI BOX arch -->
+<header class="v3-hero" id="top">
+  <div class="v3-dim" aria-hidden="true"></div>
+  <!-- logos at the top corners, diya strings hanging from each (Samriddhi left, upGrad right, mirrored) -->
+  <nav class="v3-hang-row" aria-label="upGrad Diwali 2026">
+    <div class="v3-hang left"><img class="v3-sog" src="assets/logo.webp" width="1400" height="454" alt="Samriddhi On. Sawaal Gone."><div class="v3-strings"><svg viewBox="0 0 90 300" aria-hidden="true"><g fill="none" stroke="#E2B65A" stroke-width="1.4"><path d="M24 0v150M62 0v104"/></g><g fill="#E2B65A"><circle cx="24" cy="30" r="2.2"/><circle cx="24" cy="60" r="2.2"/><circle cx="24" cy="90" r="2.2"/><circle cx="24" cy="120" r="2.2"/><circle cx="62" cy="34" r="2.2"/><circle cx="62" cy="68" r="2.2"/>
+  <path d="M62 104l7 9-7 9-7-9z"/><path d="M50 150h24c-1.5 8-6 12-12 12s-10.5-4-12-12z" transform="translate(-38 0)"/><path d="M24 136c3 5 4.5 7.5 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2 1.5-4.5 4.5-9.5z" fill="#FFE7A8"/>
+  <g transform="translate(62 150)"><circle r="4"/><g opacity=".9"><ellipse cx="0" cy="-9" rx="3.4" ry="6"/><ellipse cx="0" cy="9" rx="3.4" ry="6"/><ellipse cx="-9" cy="0" rx="6" ry="3.4"/><ellipse cx="9" cy="0" rx="6" ry="3.4"/></g></g></g></svg></div></div>
+    <div class="v3-hang right"><img class="v3-ug" src="assets/upgrad-logo-white.svg" width="107" height="30" alt="upGrad"><div class="v3-strings"><svg viewBox="0 0 90 300" aria-hidden="true"><g fill="none" stroke="#E2B65A" stroke-width="1.4"><path d="M24 0v150M62 0v104"/></g><g fill="#E2B65A"><circle cx="24" cy="30" r="2.2"/><circle cx="24" cy="60" r="2.2"/><circle cx="24" cy="90" r="2.2"/><circle cx="24" cy="120" r="2.2"/><circle cx="62" cy="34" r="2.2"/><circle cx="62" cy="68" r="2.2"/>
+  <path d="M62 104l7 9-7 9-7-9z"/><path d="M50 150h24c-1.5 8-6 12-12 12s-10.5-4-12-12z" transform="translate(-38 0)"/><path d="M24 136c3 5 4.5 7.5 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2 1.5-4.5 4.5-9.5z" fill="#FFE7A8"/>
+  <g transform="translate(62 150)"><circle r="4"/><g opacity=".9"><ellipse cx="0" cy="-9" rx="3.4" ry="6"/><ellipse cx="0" cy="9" rx="3.4" ry="6"/><ellipse cx="-9" cy="0" rx="6" ry="3.4"/><ellipse cx="9" cy="0" rx="6" ry="3.4"/></g></g></g></svg></div></div>
+  </nav>
+  <div class="v3-stage">
+    <div class="v3-arch">
+      <h1 class="v3-title">AI<br>BADHAI<br>BOX</h1>
+      <p class="v3-tag">Turn career questions<br>into career news.</p>
+    </div>
+    <div class="char aunty" data-who="aunty">
+      <div class="char-fig"><img class="fig fig-base" src="assets/chars/aunty_base.webp" width="760" height="1084" alt="" fetchpriority="high"><img class="fig-patch fig-talk" src="assets/chars/aunty_talk.webp" alt="" style="left:56.543%;top:18.425%;width:16.699%"><img class="fig-patch fig-blink" src="assets/chars/aunty_blink.webp" alt="" style="left:48.633%;top:10.753%;width:25.586%"></div>
+      <p class="c-bubble" aria-hidden="true">Job lagi?</p>
+    </div>
+    <div class="char uncle" data-who="uncle">
+      <div class="char-fig"><img class="fig fig-base" src="assets/chars/uncle_base.webp" width="760" height="1118" alt="" fetchpriority="high"><img class="fig-patch fig-talk" src="assets/chars/uncle_talk.webp" alt="" style="left:37.109%;top:22.561%;width:13.574%"><img class="fig-patch fig-blink" src="assets/chars/uncle_blink.webp" alt="" style="left:29.492%;top:13.67%;width:22.363%"></div>
+      <p class="c-bubble" aria-hidden="true">Abhi bhi rent pe?</p>
+    </div>
+    <ul class="sr-only"><li>Job lagi?</li><li>Abhi bhi rent pe?</li><li>Promotion mila?</li><li>Salary badhi?</li><li>Ab aage kya?</li></ul>
+    <a class="v3-down" href="#how" aria-label="How it works"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  </div>
+</header>
+
+<!-- HOW IT WORKS · cream -->
+<section class="v3-how" id="how" aria-labelledby="howH">
+  <div class="inner center">
+    <div class="v3-orn" aria-hidden="true"><i></i><svg viewBox="0 0 40 24"><path d="M20 3c3 5 4 9 0 15-4-6-3-10 0-15zM20 18c-5-1-9-4-11-9 5 0 9 3 11 9zm0 0c5-1 9-4 11-9-5 0-9 3-11 9zM6 20h28" fill="none" stroke="#D9A84A" stroke-width="1.4" stroke-linecap="round"/></svg><i></i></div>
+    <h2 id="howH">How your AI Badhai Box works</h2>
+    <p class="v3-sub">AI learning to help turn career questions into career news.</p>
+    <ol class="v3-steps">
+      <li><span class="n">1</span><img class="st-ic st-img" src="assets/steps/step1_who.webp" width="360" height="338" alt="" loading="lazy">
+        <h3>Choose who it’s for</h3><p>you or someone you love.</p></li>
+      <li><span class="n">2</span><img class="st-ic st-img" src="assets/steps/step2_learn.webp" width="360" height="207" alt="" loading="lazy">
+        <h3>Pick what they<br>want to learn</h3></li>
+      <li><span class="n">3</span><img class="st-ic st-img" src="assets/steps/step3_gift.webp" width="360" height="360" alt="" loading="lazy">
+        <h3>We curate an AI<br>learning gift</h3><p>around their career goals.</p></li>
+    </ol>
+    <button class="v3-cta" data-open-builder><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18v4H3zM5 13h14v8H5zM12 9v12M12 9c-2-4-7-5-7-2s5 2 7 2zm0 0c2-4 7-5 7-2s-5 2-7 2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Build your AI Badhai Box <span aria-hidden="true">→</span></button>
+    <div class="v3-orn bottom" aria-hidden="true"><i></i><svg viewBox="0 0 40 24"><path d="M20 3c3 5 4 9 0 15-4-6-3-10 0-15zM20 18c-5-1-9-4-11-9 5 0 9 3 11 9zm0 0c5-1 9-4 11-9-5 0-9 3-11 9z" fill="none" stroke="#D9A84A" stroke-width="1.4" stroke-linecap="round"/></svg><i></i></div>
+  </div>
+</section>
+
+<!-- WHAT'S INSIDE · red: the tile slides, then the course cards -->
+<section class="v3-courses" aria-labelledby="coursesH">
+  <div class="inner center">
+    <h2 id="coursesH">There’s a lot packed inside.</h2>
+  </div>
+  <div class="intro-packed" data-carousel>
+      <div class="carousel" tabindex="0" role="region" aria-roledescription="carousel" aria-label="What’s packed inside">
+        <div class="c-track"></div>
+        <button class="c-arrow prev" aria-label="Previous">←</button>
+        <button class="c-arrow next" aria-label="Next">→</button>
+      </div>
+      <div class="c-dots" aria-hidden="true"></div>
+  </div>
+  <div class="inner center">
+    <button class="v3-cta light" data-open-builder><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18v4H3zM5 13h14v8H5zM12 9v12M12 9c-2-4-7-5-7-2s5 2 7 2zm0 0c2-4 7-5 7-2s-5 2-7 2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Build your AI Badhai Box <span aria-hidden="true">→</span></button>
+  </div>
+</section>
+
+<!-- SCROLL 8 · footer -->
+<footer class="band red closing">
+  <div class="inner center">
+    <p class="foot-brand"><img class="ug-logo" src="assets/upgrad-logo-white.svg" width="107" height="30" alt="upGrad"><span class="festive">Diwali 2026</span></p>
+    <p class="logo-p"><img class="logo logo-foot" src="assets/logo.webp" width="1400" height="454" alt="Samriddhi On. Sawaal Gone."></p>
+    <p class="foot-by">AI Badhai Box by upGrad</p>
+    <a class="to-top" href="#top">Back to top ↑</a>
+  </div>
+</footer>
+
+<!-- BUILDER · scrolls 2–7, full-screen, tap only until payment -->
+<div class="builder" id="builder" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="bTitle" hidden>
+  <div class="b-bg" id="builderBg" aria-hidden="true"></div>
+  <div class="b-top">
+    <button class="b-back" id="bBack" aria-label="Back">←</button>
+    <div class="b-dots" id="bDots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <button class="b-close" id="bClose" aria-label="Close">✕</button>
+  </div>
+
+  <!-- scroll 2 · who -->
+  <section class="screen" data-screen="who">
+    <h2 id="bTitle">Who’s your AI Badhai Box for?</h2>
+    <div class="who-grid">
+      <button class="tcard who" data-mode="self"><span class="who-img"><img src="assets/who/who_me.webp" width="562" height="520" alt=""></span><span class="th">Me</span><span class="tp">For the career move I’ve been putting off.</span><span class="tgo">For me →</span><span class="sheen"></span></button>
+      <button class="tcard who" data-mode="other"><span class="who-img"><img src="assets/who/who_love.webp" width="720" height="488" alt=""></span><span class="th">Someone I love</span><span class="tp">This Diwali, I’m gifting them skills. Mithai toh aa hi jayegi.</span><span class="tgo">For them →</span><span class="sheen"></span></button>
+    </div>
+  </section>
+
+  <!-- scroll 3 · domain -->
+  <section class="screen" data-screen="domain" hidden>
+    <h2 id="domTitle">What would you like to learn?</h2>
+    <div class="domain-grid" id="domainGrid"></div>
+  </section>
+
+  <!-- scroll 4 · curation -->
+  <section class="screen curation" data-screen="curate" hidden>
+    <div class="giftbox cur-box open" id="curBox" aria-hidden="true"></div>
+    <div class="cur-copy">
+      <p class="step-tag light">AI Badhai Box / Personalising</p>
+      <h2 class="cur-h">Curating your AI Badhai Box...</h2>
+      <ol class="cur-lines" id="curLines" aria-live="polite"></ol>
+    </div>
+  </section>
+
+  <!-- scrolls 5 + 6 · the curated box, then what's packed inside -->
+  <section class="screen reveal" data-screen="reveal" hidden>
+    <div class="rv-head">
+      <h2 id="rvTitle">Your AI Badhai Box is ready.</h2>
+      <p class="b-sub">For the next time someone asks, “What’s next?”</p>
+    </div>
+    <div class="rv-domain">
+      <div class="rv-domain-copy">
+        <h3 id="rvName">Marketing &amp; AI</h3>
+        <p class="rv-curated" id="rvCurated">Curated for Marketing &amp; AI.</p>
+        <p class="rv-line" id="rvLine"></p>
+      </div>
+      <div class="edition" aria-label="Your edition">
+        <span class="ed-brand">AI Badhai Box by upGrad</span>
+        <span class="ed-name" id="rvEdition">MARKETING &amp; AI EDITION</span>
+        <span class="ed-price">₹249</span>
+      </div>
+    </div>
+    <p class="step-tag light rv-inside">What’s inside</p>
+    <div class="rv-groups" id="rvGroups"></div>
+
+    <div class="rv-loaded" data-carousel>
+      <h2 class="rv-loaded-h"><span class="l">There’s a lot packed inside.</span></h2>
+      <div class="carousel" tabindex="0" role="region" aria-roledescription="carousel" aria-label="What’s packed inside">
+        <div class="c-track"></div>
+        <button class="c-arrow prev" aria-label="Previous">←</button>
+        <button class="c-arrow next" aria-label="Next">→</button>
+      </div>
+      <div class="c-dots" aria-hidden="true"></div>
+    </div>
+    <div class="rv-cta">
+      <button class="cta cream-cta" id="toCheckout">Get my AI Badhai Box for ₹249</button>
+    </div>
+  </section>
+
+  <!-- scroll 7 · payment -->
+  <section class="screen checkout" data-screen="checkout" hidden>
+    <h2 id="coTitle">Ready for a better answer next time?</h2>
+    <p class="b-sub" id="coSub">Your AI Badhai Box is ready.<br>Unlock it for ₹249.</p>
+    <form class="form-card" id="form" novalidate>
+      <div class="summary">
+        <div class="sum-row"><span class="sum-k">Your selection</span><span class="sum-v" id="sumDomain">Marketing &amp; AI</span></div>
+        <div class="sum-row"><span class="sum-k">For</span><span class="sum-v" id="sumFor">Me</span></div>
+        <div class="sum-row total"><span class="sum-k">Total</span><span class="sum-v">₹249</span></div>
+        <button class="link change" type="button" id="changeSel">← Change selection</button>
+      </div>
+      <div class="sum-people" id="sumPeople"></div>
+      <button class="link change" type="button" id="editDetails">Edit details</button>
+      <button class="pay" type="submit" id="payBtn">Get my AI Badhai Box for ₹249</button>
+      <p class="secure" id="formHint" aria-live="polite"></p>
+    </form>
+  </section>
+
+    <!-- details pop-up: opens right after "Me" / "Someone you love" (theirs + yours for a gift) -->
+  <div class="dpop" id="dpop" hidden>
+    <div class="dpop-back" data-dclose></div>
+    <form class="dpop-card form-card" id="detailsForm" novalidate role="dialog" aria-modal="true" aria-labelledby="dpopTitle">
+      <button class="dpop-x" type="button" data-dclose aria-label="Close">✕</button>
+      <h3 class="dpop-title" id="dpopTitle">Tell us who it’s for.</h3>
+      <fieldset id="giftFields">
+        <legend class="sr-only">Their details</legend>
+        <div class="row2">
+          <label>Their name<input id="r-name" autocomplete="off" placeholder="Their name"></label>
+          <label>Their mobile number<input id="r-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile"></label>
+        </div>
+        <label>Their email<input id="r-email" type="email" autocomplete="off" placeholder="their@email.com"></label>
+        <label>Add a Diwali note<textarea id="note" rows="3">Happy Diwali! Here’s something for the next time someone asks, “So, what’s next?” ✨</textarea></label>
+      </fieldset>
+      <fieldset id="selfFields">
+        <legend id="selfLegend">Your details</legend>
+        <p class="self-line" id="selfLine">A little something for the move you’ve been meaning to make.</p>
+        <div class="row2">
+          <label>Your name<input id="g-name" autocomplete="name" placeholder="Your name"></label>
+          <label>Your mobile number<input id="g-phone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10-digit mobile"></label>
+        </div>
+        <label>Your email<input id="g-email" type="email" autocomplete="email" placeholder="you@email.com"></label>
+      </fieldset>
+      <button class="pay" type="submit" id="dpopGo">Continue <span aria-hidden="true">→</span></button>
+      <p class="secure" id="dpopHint" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <!-- after payment (draft: no payment) -->
+  <section class="screen success" data-screen="done" hidden>
+    <div class="giftbox small" id="doneBox" aria-hidden="true"></div>
+    <h2 id="doneH">Your AI Badhai Box is ready. ✨</h2>
+    <p class="b-sub" id="doneP"></p>
+    <p class="logo-p"><img class="logo logo-done" src="assets/logo.webp" width="1400" height="454" alt="Samriddhi On. Sawaal Gone."></p>
+    <button class="ghost" id="again">Build an AI Badhai Box</button>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+<script src="device.js"></script>
+<script src="data.js"></script>
+<script src="bgfx/v2.js"></script>
+<script src="bgfx/v6.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
