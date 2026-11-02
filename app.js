@@ -280,6 +280,7 @@
     $("#dpopGo").innerHTML = dThen === "checkout" ? "Save details" : 'Continue <span aria-hidden="true">→</span>';
     $("#dpopHint").textContent = ""; $("#dpopHint").classList.remove("err");
     dform.querySelectorAll(".bad").forEach(function(x){ x.classList.remove("bad"); });
+    if (!leadId){ $("#consent").checked = false; consentAt = ""; $("#consent").closest(".consent").classList.remove("bad"); } // unticked until they've continued once
     dpop.hidden = false; dpop.classList.remove("enter"); void dpop.offsetWidth; dpop.classList.add("enter");
     var first = dform.querySelector("fieldset:not([hidden]) input"); if (first) first.focus({ preventScroll: true });
   }
@@ -288,6 +289,7 @@
   dform.addEventListener("input", function(e){ e.target.classList.remove("bad"); });
   // consent: unticked by default, required to continue; the time it was ticked goes with the lead
   var consentAt = "";
+  $("#consent").checked = false; // browsers restore a ticked box on reload / back; it must start unticked
   $("#consent").addEventListener("change", function(e){ consentAt = e.target.checked ? new Date().toISOString() : ""; e.target.closest(".consent").classList.remove("bad"); });
   dform.addEventListener("submit", function(e){ e.preventDefault();
     var ok = ["r-name", "r-phone", "r-email", "g-name", "g-phone", "g-email"].map(valid).every(Boolean), hint = $("#dpopHint");
