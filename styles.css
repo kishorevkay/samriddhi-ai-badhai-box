@@ -673,3 +673,5 @@ html.lenis, html.lenis body { height: auto; }
 .spop-by { grid-column: 1; font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); }
 .spop-go { grid-column: 2; grid-row: 1 / span 2; font: 700 12px var(--body); color: var(--v3-ink); white-space: nowrap; }
 @media (max-width: 640px) { .spop-go { display: none; } }
+/* How it works copy (2 Nov changes): balanced lines, no one-word last line */
+.v3-steps h3, .v3-steps p, .dom .tp { text-wrap: balance; }

@@ -36,28 +36,28 @@ window.BOX = {
   note: "Program-specific details might differ and will be shared over email."
 };
 
-// focus = what the mastery track is "built around"; flagship = the bigger-move pool (t = programme, by = institution)
+// sub = the line under the domain card; focus = what the mastery track is "built around"; flagship = the bigger-move pool (t = programme, by = institution)
 window.DOMAINS = [
-  { id: "data", name: "Data & AI", focus: "Data & AI", icon: "chart", tile: "d1_data_ai", edition: "DATA & AI EDITION",
-    curated: "Curated for Data & AI.", line: "Learning for where data can take you next.",
+  { id: "data", name: "Data & AI", focus: "Data & AI", sub: "Data, analytics, ML & AI", icon: "chart", tile: "d1_data_ai", edition: "DATA & AI EDITION",
+    curated: "Curated for Data & AI.", line: "A mix of Data & AI learning, from short courses you can start right away to comprehensive programmes designed for long-term career growth.",
     mastery: "Microsoft Data Science & Analytics Mastery Track",
     short: ["Python for Data Science & AI", "Building an ETL Pipeline", "Fundamentals of Applied Statistics", "Statistics for Beginners"],
     free: ["Fundamentals of Deep Learning & Neural Networks", "Introduction to Data Analysis using Excel", "Introduction to NLP", "Unsupervised Learning: Clustering", "Advanced SQL for Analysis", "Introduction to Tableau"],
     flagship: [{ t: "Executive Post Graduate Certificate Programme in Data Science & AI", by: "IIIT Bangalore" }, { t: "Master of Science in Data Science", by: "Liverpool John Moores University" }] },
-  { id: "tech", name: "Tech & AI", focus: "Tech & AI", icon: "code", tile: "d2_tech_ai", edition: "TECH & AI EDITION",
-    curated: "Curated for Tech & AI.", line: "Learning for what you want to build next.",
+  { id: "tech", name: "Tech & AI", focus: "Tech & AI", sub: "Coding, automation & AI", icon: "code", tile: "d2_tech_ai", edition: "TECH & AI EDITION",
+    curated: "Curated for Tech & AI.", line: "A mix of Tech & AI learning, from short courses you can start right away to comprehensive programmes designed for long-term career growth.",
     mastery: "Microsoft Software Development Mastery Track",
     short: ["Machine Learning Fundamentals", "ML Fundamentals: NLP", "ML Fundamentals: Object Detection", "Workflow Orchestration with Google Cloud Composer"],
     free: ["Fundamentals of Cloud Computing", "Data Structures & Algorithms", "Core Java Basics", "React.js for Beginners", "Node.js for Beginners", "Fundamentals of Cybersecurity"],
     flagship: [{ t: "Executive PG in Forward Deployed AI Engineering", by: "IIIT Bangalore" }, { t: "Chief Technology Officer & AI Leadership Programme" }, { t: "Doctor of Technology in Applied & Agentic AI", by: "Golden Gate University" }] },
-  { id: "mkt", name: "Marketing & AI", focus: "Marketing", icon: "spark", tile: "d3_marketing_ai", edition: "MARKETING & AI EDITION",
-    curated: "Curated for Marketing & AI.", line: "A mix of Marketing & AI learning, from courses you can start right away to deeper programmes for the bigger move.",
+  { id: "mkt", name: "Marketing & AI", focus: "Marketing", sub: "Content, growth & AI", icon: "spark", tile: "d3_marketing_ai", edition: "MARKETING & AI EDITION",
+    curated: "Curated for Marketing & AI.", line: "A mix of Marketing & AI learning, from short courses you can start right away to comprehensive programmes designed for long-term career growth.",
     mastery: "Microsoft Content & Marketing Mastery Track",
     short: ["Paid Digital Marketing", "Organic Digital Marketing", "Social Media Marketing", "Data-driven Marketing"],
     free: ["Complete Guide to Content Marketing", "Fundamentals of Marketing", "Ultimate Guide to Email Marketing", "Basics of SEO", "Introduction to Social Media Marketing", "Web Analytics for Beginners"],
     flagship: [{ t: "Advanced Certificate in AI-Powered Digital Marketing & Communication", by: "MICA" }] },
-  { id: "mgmt", name: "Management & AI", focus: "Management", icon: "compass", tile: "d4_management_ai", edition: "MANAGEMENT & AI EDITION",
-    curated: "Curated for Management & AI.", line: "Learning for where you want to lead next.",
+  { id: "mgmt", name: "Management & AI", focus: "Management", sub: "Leadership, strategy & AI", icon: "compass", tile: "d4_management_ai", edition: "MANAGEMENT & AI EDITION",
+    curated: "Curated for Management & AI.", line: "A mix of Management & AI learning, from short courses you can start right away to comprehensive programmes designed for long-term career growth.",
     mastery: "Microsoft Managerial Excellence Mastery Track",
     short: ["Leading Teams and Organisations", "Management Fundamentals: Strategy", "Management Fundamentals: Managerial Communication", "Solving Problems: Guesstimates"],
     free: ["Business Analytics Fundamentals", "Introduction to Design Thinking", "Business Communication Masterclass", "Economics Masterclass", "Introduction to HR Analytics", "How to Sell Anything"],

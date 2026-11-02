@@ -307,7 +307,7 @@
   var dg = $("#domainGrid");
   DOMAINS.forEach(function(d){
     var b = document.createElement("button"); b.className = "tcard dom"; b.dataset.id = d.id;
-    b.innerHTML = '<span class="dom-img"><img src="assets/course/' + d.tile + '.webp" alt="" loading="lazy" width="720" height="523"></span><span class="th">' + d.name + '</span><span class="tgo">Choose ' + d.name + ' →</span><span class="sheen"></span>';
+    b.innerHTML = '<span class="dom-img"><img src="assets/course/' + d.tile + '.webp" alt="" loading="lazy" width="720" height="523"></span><span class="th">' + d.name + '</span><span class="tp">' + d.sub + '</span><span class="tgo">Choose ' + d.name + ' →</span><span class="sheen"></span>';
     tilt(b); b.addEventListener("click", function(){ state.domain = d; burst(b, 8); later(startCuration, 220); });
     dg.appendChild(b);
   });
@@ -371,7 +371,7 @@
     var I = BOX.info, O = BOX.offer;
     return [
       { k: "The essential", t: BOX.essential, d: "A foundation in Generative AI to get started.", m: O.essential, info: I.essential },
-      { k: "The mastery track", t: d.mastery, d: "A deeper learning path built around " + d.focus + ".", m: O.mastery, coupon: true, info: I.mastery },
+      { k: "The mastery track", t: d.mastery, d: "A comprehensive learning path built around " + d.focus + ".", m: O.mastery, coupon: true, info: I.mastery },
       { k: "Short courses", d: "Skills to sharpen what you do right now.", m: O.short, pool: "short", info: I.short },
       { k: "AI learning", d: "Because whatever comes next will probably have AI in it.", m: O.ai, pool: "ai", info: I.ai },
       { k: "Free courses", wide: true, d: "A few more skills to explore at your own pace.", m: O.free, pool: "free", info: I.free },
