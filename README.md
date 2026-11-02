@@ -5,7 +5,7 @@ upGrad's Diwali 2026 microsite. Visitors build a personalised AI-learning gift (
 - **Live site:** https://samriddhi-gift-draft.vercel.app
 - **Leads dashboard:** https://samriddhi-gift-draft.vercel.app/admin (PIN-protected; ask the marketing team for the PIN)
 
-> **For the product team: leads are already being captured.** Every visitor who fills the details pop-up is saved to the database and shows up live in `/admin`, with their stage in the funnel, the domain they picked and the campaign source (UTM). The dashboard can export everything as CSV. Details below.
+> **For the product team: leads are already being captured.** Every visitor who fills the details pop-up is saved to the database and shows up live in `/admin`, with their stage in the funnel, the domain they picked, **the exact courses in their box** and the campaign source (UTM). The dashboard can export everything as CSV; the `courses` column is a comma-separated list you can use to send each buyer their course links. Details below.
 
 ---
 
@@ -16,16 +16,33 @@ Plain static site + two serverless functions. No framework, no build step, no np
 | Path | What it is |
 |---|---|
 | `index.html`, `styles.css`, `app.js` | The site: hero, "How it works", what's inside, and the full-screen builder (scrolls 2–7 of the copy). |
-| `data.js` | **All campaign copy**: domains, what's inside each edition, curation lines, carousel tiles. Edit copy here. |
+| `data.js` | **All campaign copy and the course catalogue**: `BOX` (common courses, how many are drawn per section, offer badges, hours / eligibility / mode) and `DOMAINS` (each domain's mastery track and its short, free and flagship pools), plus curation lines and carousel tiles. Edit courses here. |
 | `device.js` | Desktop "📱 Mobile view" toggle for reviewers (phone-frame preview of the same page). |
 | `bgfx/v2.js`, `bgfx/v6.js` | Reactive canvas backgrounds (floating embers, click-glow rangoli). |
+| `bgfx/fireworks.js` | Soft background fireworks in the hero and the footer. Colours come from the page's colour tokens; pauses off-screen; off with "reduce motion". |
 | `admin.html` | Leads dashboard at `/admin`. |
 | `api/lead.js` | `POST /api/lead`: saves and updates a lead. |
 | `api/admin.js` | `GET /api/admin`: returns all leads (needs the admin PIN). |
 | `api/_lib.js`, `api/_mem.js` | Redis helper (Upstash REST, plain `fetch`) and an in-memory store for local dev. |
 | `dev/server.js` | Local server that runs the site and the API together. |
-| `assets/` | Images (WebP): characters, course tiles, step icons, logos. |
+| `dev/palette.html` | Local colour editor: the site in a frame with every colour mapped to 14 roles, 8 presets, desktop/phone views. Open http://localhost:5250/dev/palette.html. Not deployed. |
+| `assets/` | Images (WebP): characters, course tiles, step icons, detail icons (`assets/icons/`), logos. |
 | `vercel.json` | Region `bom1` (Mumbai, next to the database), security headers, `noindex` on `/admin` and `/api`. |
+
+## How the box is built
+
+From the "Diwali Campaign Courses" sheet. Every box has six sections:
+
+| Section | What the visitor gets | Offer badge | Swap |
+|---|---|---|---|
+| The essential | Microsoft Generative AI Essentials (everyone) | Completely Free - 100% Off | – |
+| The mastery track | The chosen domain's Microsoft mastery track | Flat 75% Off | – |
+| Short courses | 2 of the domain's 4, drawn at random | 100% Off | ✓ |
+| AI learning | 1 of the 2 agentic AI courses (everyone) | 100% Off | ✓ |
+| Free courses | 3 of the domain's 6, drawn at random | FREE | ✓ |
+| For the bigger move | 1 of the domain's flagship programmes (Marketing always gets MICA) + Executive PG in Applied AI and Agentic AI (everyone) | Scholarships Available | ✓ (not Marketing) |
+
+**Swap** opens a pop-up listing the other courses in that section; the visitor picks one. Each section also shows learning hours, eligibility and mode of delivery once, with icons. Under the box: "Program-specific details might differ and will be shared over email." The final box (after any swaps) is saved with the lead.
 
 ## How lead capture works
 
@@ -37,7 +54,9 @@ The builder writes **one lead per visit** and updates it as the visitor moves th
 | `curated` | A domain is picked and the curated box is shown | Saw their box |
 | `pay` | The pay button is pressed (the visitor goes to Razorpay) | Pressed pay |
 
-Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `device`, `source` (UTM / query string).
+Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `box` (the exact courses: `essential`, `mastery`, `short[]`, `ai[]`, `free[]`, `bigger[]`), `device`, `source` (UTM / query string).
+
+**Courses in `/admin` and the CSV:** the "Courses in the box" column and the CSV `courses` column list every course the visitor ended up with, comma-separated, in box order. Institutions are in brackets (e.g. "MBA (Golden Gate University)"), so no course name contains a comma and the list splits cleanly. Leads from before 2 Nov 2026 have no courses.
 
 **Consent:** the details pop-up has a required, unticked-by-default checkbox (agree to upGrad's Privacy Policy and Terms of Use, and consent to be contacted by phone, email, SMS and WhatsApp). The visitor can't continue without it, and `api/lead.js` rejects any lead without `consent: true`. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet. The footer carries the legal disclaimer. The Privacy Policy link goes to https://www.upgrad.com/privacy/, and Terms of Use and T&C go to https://www.upgrad.com/terms/.
 

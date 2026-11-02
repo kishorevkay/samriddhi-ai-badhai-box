@@ -219,6 +219,17 @@
     </form>
   </div>
 
+  <!-- swap pop-up: opens from a course's Swap button and lists the other courses in that section -->
+  <div class="dpop spop" id="spop" hidden>
+    <div class="dpop-back" data-sclose></div>
+    <div class="dpop-card form-card" role="dialog" aria-modal="true" aria-labelledby="spopTitle">
+      <button class="dpop-x" type="button" data-sclose aria-label="Close">✕</button>
+      <h3 class="dpop-title" id="spopTitle">Swap this course</h3>
+      <p class="spop-now" id="spopNow"></p>
+      <div class="spop-list" id="spopList"></div>
+    </div>
+  </div>
+
   <!-- after payment (draft: no payment) -->
   <section class="screen success" data-screen="done" hidden>
     <div class="giftbox small" id="doneBox" aria-hidden="true"></div>
@@ -234,6 +245,7 @@
 <script src="data.js"></script>
 <script src="bgfx/v2.js"></script>
 <script src="bgfx/v6.js"></script>
+<script src="bgfx/fireworks.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

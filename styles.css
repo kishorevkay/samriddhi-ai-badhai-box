@@ -154,7 +154,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 .chips li::before { content: "✦ "; color: var(--gold-ink); }
 .chips.on-dark li { background: rgba(248,239,223,.08); border-color: rgba(248,239,223,.25); color: var(--cream); }
 .chips.on-dark li::before { color: var(--gold); }
-.band.red.closing { padding: 80px 0 60px; background: var(--bg-night); }
+.band.red.closing { padding: 80px 0 60px; background: #0C0A0A; } /* black footer (Kish 2026-11-02); fireworks canvas sits under .inner */
+.band.red.closing > .inner { position: relative; z-index: 1; }
 .fine { color: rgba(248,239,223,.7); font-size: 13px; margin-top: 16px; }
 
 /* ---------- builder ---------- */
@@ -530,12 +531,12 @@ html.lenis, html.lenis body { height: auto; }
 .v3-hang .v3-ug { height: 34px; width: auto; display: block; margin-top: 12px; }
 .v3-hang .v3-strings { position: static; width: 90px; height: 260px; margin-top: -4px; }
 .v3-hang.left .v3-strings { margin-left: 18px; transform: none; }
-.v3-hang.right .v3-strings { margin-right: 4px; transform: scaleX(-1); margin-top: 6px; }
+.v3-hang.right .v3-strings { margin-right: 4px; transform: scaleX(-1); margin-top: -9px; } /* strings start at the letters' baseline (the logo SVG keeps 22% below it for the "p" descender) */
 @media (max-width: 640px) {
   .v3-hang-row { top: 12px; padding: 0 14px; }
   .v3-hang .v3-sog { height: 40px; } .v3-hang .v3-ug { height: 22px; margin-top: 8px; }
   .v3-hang .v3-strings { width: 46px; height: 132px; }
-  .v3-hang.left .v3-strings { margin-left: 10px; }
+  .v3-hang.left .v3-strings { margin-left: 10px; } .v3-hang.right .v3-strings { margin-top: -5px; }
 }
 @media (min-width: 641px) { .v3-hang .v3-sog { height: 84px; } .v3-hang .v3-ug { height: 40px; } }
 /* stage scales as one piece (set in JS) from its bottom centre; a wrapper keeps the right height in the page */
@@ -639,3 +640,36 @@ html.lenis, html.lenis body { height: auto; }
 .legal a { color: rgba(246,231,200,.9); text-decoration: underline; text-underline-offset: 2px; }
 .legal a:hover { color: var(--gold-hi); }
 @media (max-width: 640px) { .legal { font-size: 11.5px; text-align: left; margin-top: 26px; } }
+
+/* box rework (2026-11-02): random picks with Swap, details row per section, offer badges, shimmering scholarship badge */
+.group li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.group .pick-t { min-width: 0; }
+.group .swap { flex: none; border: 1.5px solid rgba(156,107,30,.35); background: #FFF8EA; color: var(--gold-ink); font: 700 12px/1 var(--body); letter-spacing: .02em; padding: 8px 11px; min-height: 32px; border-radius: 999px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.group .swap:hover { background: var(--v3-gold); border-color: var(--v3-gold); color: #3A2306; }
+.group .swapped .pick-t { animation: swapin .45s cubic-bezier(.2,1.2,.3,1); }
+@keyframes swapin { from { opacity: 0; transform: translateY(6px); } }
+.group.big .bigitem { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.group.big .gm + .bigitem { border-top: 0; padding-top: 0; }
+.group.wide:not(.big) ul { max-width: 640px; }
+.group .ginfo { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line); font: 600 13px var(--body); color: var(--ink-soft); }
+.group.big .ginfo { border-top-color: rgba(168,114,27,.3); color: #5E4A1C; }
+.group .ginfo > span { display: inline-flex; align-items: center; gap: 6px; }
+.group .gi { width: 24px; height: 24px; display: block; flex: none; }
+.group .gm.shine { position: relative; overflow: hidden; font-size: 14px; padding: 8px 15px; color: #5A1020; background: linear-gradient(100deg, #C98F23 0%, #F6D77E 38%, #FFF1BE 50%, #E7B548 64%, #B67C1C 100%); box-shadow: 0 0 0 1.5px #A8721B, 0 8px 22px rgba(168,114,27,.45); text-shadow: 0 1px 0 rgba(255,244,200,.6); }
+.group .gm.shine::before { content: "✦ "; color: #8E1730; }
+.group .gm.shine::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.75) 50%, transparent 70%); transform: translateX(-120%); animation: shine 2.6s ease-in-out infinite; }
+@keyframes shine { 0%, 35% { transform: translateX(-120%); } 75%, 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .group .gm.shine::after { animation: none; } .group .swapped .pick-t { animation: none; } }
+.rv-note { grid-column: 1 / -1; margin: 4px 0 0; text-align: center; font: 400 13px/1.5 var(--body); color: rgba(248,239,223,.7); }
+/* swap pop-up */
+.spop .dpop-card { width: min(520px, 100%); }
+.spop-now { margin: -6px 0 16px; font-size: 14px; color: var(--ink-soft); }
+.spop-now b { color: var(--ink); font-weight: 600; }
+.spop-list { display: flex; flex-direction: column; gap: 10px; }
+.spop-opt { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 14px; width: 100%; text-align: left; padding: 14px 16px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; color: var(--ink); cursor: pointer; transition: border-color .15s, background .15s, transform .1s; }
+.spop-opt:hover, .spop-opt:focus-visible { border-color: var(--v3-gold); background: #FFF8EA; outline: none; }
+.spop-opt:active { transform: scale(.99); }
+.spop-t { font: 600 15.5px/1.35 var(--body); grid-column: 1; }
+.spop-by { grid-column: 1; font: 700 11px var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--gold-ink); }
+.spop-go { grid-column: 2; grid-row: 1 / span 2; font: 700 12px var(--body); color: var(--v3-ink); white-space: nowrap; }
+@media (max-width: 640px) { .spop-go { display: none; } }

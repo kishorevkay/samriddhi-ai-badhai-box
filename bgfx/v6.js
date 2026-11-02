@@ -187,16 +187,22 @@
 
     /* ---------- cached background: red ground, vignette, corner lotus ---------- */
     // ground follows the page's --bg token (the Design Board can change it live)
-    var ground = "";
+    var ground = "", lastNight = "";
     function groundColor() { ground = getComputedStyle(stage).getPropertyValue("--bg").trim() || "#9A1B2B"; return ground; }
+    // vignette tint = the page's --bg-night (#470B15), as "r,g,b" so it can take an alpha
+    function nightRgb() {
+      var c = getComputedStyle(stage).getPropertyValue("--bg-night").trim(), m = /^#([0-9a-f]{6})$/i.exec(c);
+      return m ? [0, 2, 4].map(function (i) { return parseInt(m[1].substr(i, 2), 16); }).join(",") : "71,11,21";
+    }
     function paintBg() {
       bg.width = canvas.width; bg.height = canvas.height;
       bctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       bctx.fillStyle = groundColor(); // deep crimson ground = --bg from styles.css
       bctx.fillRect(0, 0, W, H);
       var g = bctx.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.22, W / 2, H / 2, Math.sqrt(W * W + H * H) * 0.62);
-      g.addColorStop(0, "rgba(71,11,21,0)");
-      g.addColorStop(1, "rgba(71,11,21,0.6)");
+      var night = nightRgb();
+      g.addColorStop(0, "rgba(" + night + ",0)");
+      g.addColorStop(1, "rgba(" + night + ",0.6)");
       bctx.fillStyle = g;
       bctx.fillRect(0, 0, W, H);
 
@@ -556,7 +562,7 @@
       var dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
       last = now;
       T += dt;
-      if ((++frames & 31) === 0 && (getComputedStyle(stage).getPropertyValue("--bg").trim() || "#9A1B2B") !== ground) paintBg();
+      if ((++frames & 31) === 0 && ((getComputedStyle(stage).getPropertyValue("--bg").trim() || "#9A1B2B") !== ground || nightRgb() !== lastNight)) { paintBg(); lastNight = nightRgb(); }
       step(dt);
       draw();
       raf = requestAnimationFrame(frame);

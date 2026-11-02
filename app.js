@@ -215,6 +215,7 @@
       buyer: { name: v("g-name"), phone: v("g-phone"), email: v("g-email") },
       recipient: other ? { name: v("r-name"), phone: v("r-phone"), email: v("r-email"), note: v("note") } : null,
       consent: $("#consent").checked, consentAt: consentAt,
+      box: boxForLead(),
       source: (function(){ var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(k){ u.delete(k); }); return u.toString().slice(0, 160); })() };
     try { fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) {}
   }
@@ -246,14 +247,14 @@
     startBuilderBg();
   }
   function close(){
-    clearFlow(); builder.hidden = true; if (dpop) dpop.hidden = true; document.body.classList.remove("lock");
+    clearFlow(); builder.hidden = true; if (dpop) dpop.hidden = true; if (spop) spop.hidden = true; document.body.classList.remove("lock");
     behind.forEach(function(el){ el.inert = false; });
     if (returnFocus && returnFocus.focus) returnFocus.focus({ preventScroll: true });
   }
   document.querySelectorAll("[data-open-builder]").forEach(function(b){ b.addEventListener("click", open); });
   $("#bClose").addEventListener("click", close);
   $("#bBack").addEventListener("click", function(){ if (BACK[state.screen]) go(BACK[state.screen]); });
-  document.addEventListener("keydown", function(e){ if (e.key !== "Escape" || builder.hidden) return; if (!dpop.hidden) closeDetails(); else close(); });
+  document.addEventListener("keydown", function(e){ if (e.key !== "Escape" || builder.hidden) return; if (!spop.hidden) closeSwap(); else if (!dpop.hidden) closeDetails(); else close(); });
 
   /* ---------- gold-foil sheen + gentle tilt on the big tap cards ---------- */
   function tilt(card){
@@ -335,28 +336,103 @@
   // paper-cut tile on top of each "What's inside" card (course_tiles/output, cropped to a band in assets/course)
   var GROUP_TILES = { "essential": "g1_the_essential", "mastery track": "g2_mastery_track", "short courses": "g3_short_courses", "ai learning": "g4_ai_learning", "free courses": "g5_free_courses", "for the bigger move": "g6_bigger_move" };
   function esc(t){ return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  // learning hours · eligibility · mode of delivery, once per section (BOX.info). Paper-cut icons from ChatGPT (ICONS_SRC → assets/icons, 96 px)
+  var INFO_ICONS = { hrs: "learning_hours", elig: "eligibility", mode: "mode_of_delivery" };
+  function infoHTML(info){
+    if (!info) return "";
+    var parts = [["hrs", info[0], "Learning hours"], ["elig", info[1], "Eligibility"], ["mode", info[2], "Mode of delivery"]].filter(function(p){ return p[1]; });
+    return '<div class="ginfo">' + parts.map(function(p){ return '<span title="' + p[2] + '"><img class="gi" src="assets/icons/' + INFO_ICONS[p[0]] + '.webp" alt="" width="24" height="24"><span class="sr-only">' + p[2] + ': </span>' + esc(p[1]) + '</span>'; }).join("") + "</div>";
+  }
+  function bigHTML(x){ return '<div class="bt">' + esc(x.t) + '</div>' + (x.by ? '<div class="bb">' + esc(x.by) + '</div>' : ""); }
+  // one swappable course: pool = which list it came from, i = its slot in the picks
+  function pickHTML(pool, i, label, inner){
+    var canSwap = state.pools[pool].length > state.picks[pool].length;
+    return '<span class="pick-t">' + inner + '</span>' + (canSwap ? '<button type="button" class="swap" data-pool="' + pool + '" data-i="' + i + '" aria-label="Swap ' + esc(label) + ' for another course">↻ Swap</button>' : "");
+  }
   function groupHTML(G){
-    var cls = "group" + (G.wide ? " wide" : "") + (G.big ? " wide big" : "") + (G.items && G.items.length > 4 && !G.big ? " free" : "");
+    var cls = "group" + (G.wide ? " wide" : "") + (G.big ? " wide big" : "");
     var tile = GROUP_TILES[G.k.toLowerCase().replace(/^the /, "")];
     var h = '<div class="' + cls + '">' + (tile ? '<div class="g-img"><img src="assets/course/' + tile + '.webp" alt="" loading="lazy" width="720" height="523"></div>' : '') + '<div class="gk">' + esc(G.k) + '</div>';
-    if (G.intro) h += '<p class="gd">' + esc(G.intro) + '</p>';
-    if (G.big && G.t) h += '<div class="bigitem"><div class="bt">' + esc(G.t) + '</div>' + (G.by ? '<div class="bb">' + esc(G.by) + '</div>' : '') + '</div>';
-    else if (G.t) h += '<div class="gt">' + esc(G.t) + '</div>';
+    if (G.t) h += '<div class="gt">' + esc(G.t) + '</div>';
     if (G.d) h += '<p class="gd">' + esc(G.d) + '</p>';
-    if (G.m) h += '<span class="gm' + (G.coupon ? ' coupon' : '') + '">' + esc(G.m) + '</span>';
-    if (G.items) h += "<ul>" + G.items.map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
+    if (G.m) h += '<span class="gm' + (G.coupon ? ' coupon' : '') + (G.shine ? ' shine' : '') + '">' + esc(G.m) + '</span>';
+    if (G.pool && !G.big) h += '<ul>' + state.picks[G.pool].map(function(x, i){ return '<li>' + pickHTML(G.pool, i, x, esc(x)) + '</li>'; }).join("") + '</ul>';
+    if (G.big){
+      h += state.picks.flagship.map(function(x, i){ return '<div class="bigitem">' + pickHTML("flagship", i, x.t, bigHTML(x)) + '</div>'; }).join("");
+      h += '<div class="bigitem">' + bigHTML(BOX.common) + '</div>';
+    }
+    h += infoHTML(G.info);
     if (G.note) h += '<p class="gnote">' + esc(G.note) + '</p>';
     if (G.tag) h += '<span class="gm">' + esc(G.tag) + '</span>';
     return h + "</div>";
   }
+  // the six sections of every box, in order
+  function boxGroups(d){
+    var I = BOX.info, O = BOX.offer;
+    return [
+      { k: "The essential", t: BOX.essential, d: "A foundation in Generative AI to get started.", m: O.essential, info: I.essential },
+      { k: "The mastery track", t: d.mastery, d: "A deeper learning path built around " + d.focus + ".", m: O.mastery, coupon: true, info: I.mastery },
+      { k: "Short courses", d: "Skills to sharpen what you do right now.", m: O.short, pool: "short", info: I.short },
+      { k: "AI learning", d: "Because whatever comes next will probably have AI in it.", m: O.ai, pool: "ai", info: I.ai },
+      { k: "Free courses", wide: true, d: "A few more skills to explore at your own pace.", m: O.free, pool: "free", info: I.free },
+      { k: "For the bigger move", big: true, m: O.bigger, shine: true, pool: "flagship", info: I.bigger,
+        note: "Flagship programmes for when the next move calls for something bigger.", tag: "Speak to a counsellor about available scholarships." }
+    ];
+  }
+  // random draw from each pool, kept per domain so going back and forth doesn't reshuffle the box
+  function shuffled(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var picksByDomain = {};
+  function drawBox(d){
+    state.pools = { short: d.short, ai: BOX.ai, free: d.free, flagship: d.flagship };
+    if (!picksByDomain[d.id]){
+      var p = {}; Object.keys(BOX.pick).forEach(function(k){ var pool = state.pools[k]; p[k] = shuffled(pool).slice(0, BOX.pick[k]).sort(function(a, b){ return pool.indexOf(a) - pool.indexOf(b); }); });
+      picksByDomain[d.id] = p;
+    }
+    state.picks = picksByDomain[d.id];
+  }
+  // what goes into the lead: the exact courses in this visitor's box
+  function boxForLead(){
+    if (!state.domain || !state.picks) return null;
+    return { essential: BOX.essential, mastery: state.domain.mastery, short: state.picks.short, ai: state.picks.ai, free: state.picks.free,
+      bigger: state.picks.flagship.map(function(x){ return x.t + (x.by ? " (" + x.by + ")" : ""); }).concat(BOX.common.t) };
+  }
+  var swapSave = null;
+  // Swap opens a pop-up with the other courses of that section; picking one replaces it in the box
+  var spop = $("#spop"), swapFrom = null, SWAP_NOUN = { short: "short course", ai: "AI course", free: "free course", flagship: "programme" };
+  function openSwap(btn){
+    var pool = btn.dataset.pool, cur = state.picks[pool][+btn.dataset.i];
+    var rest = state.pools[pool].filter(function(x){ return state.picks[pool].indexOf(x) < 0; });
+    if (!rest.length) return;
+    swapFrom = btn;
+    $("#spopTitle").textContent = "Pick another " + SWAP_NOUN[pool] + ".";
+    $("#spopNow").innerHTML = "In your box now: <b>" + esc(cur.t || cur) + "</b>";
+    $("#spopList").innerHTML = rest.map(function(x){ return '<button type="button" class="spop-opt" data-k="' + state.pools[pool].indexOf(x) + '"><span class="spop-t">' + esc(x.t || x) + "</span>" + (x.by ? '<span class="spop-by">' + esc(x.by) + "</span>" : "") + '<span class="spop-go" aria-hidden="true">Swap in →</span></button>'; }).join("");
+    spop.hidden = false; spop.classList.remove("enter"); void spop.offsetWidth; spop.classList.add("enter");
+    $("#spopList .spop-opt").focus({ preventScroll: true });
+  }
+  function closeSwap(){ spop.hidden = true; if (swapFrom && swapFrom.isConnected) swapFrom.focus({ preventScroll: true }); }
+  spop.querySelectorAll("[data-sclose]").forEach(function(b){ b.addEventListener("click", closeSwap); });
+  $("#spopList").addEventListener("click", function(e){
+    var o = e.target.closest(".spop-opt"); if (!o || !swapFrom) return;
+    var pool = swapFrom.dataset.pool, i = +swapFrom.dataset.i, x = state.pools[pool][+o.dataset.k];
+    state.picks[pool][i] = x;
+    var slot = swapFrom.parentNode;
+    slot.innerHTML = pickHTML(pool, i, x.t || x, pool === "flagship" ? bigHTML(x) : esc(x));
+    slot.classList.remove("swapped"); void slot.offsetWidth; slot.classList.add("swapped");
+    swapFrom = slot.querySelector(".swap");
+    closeSwap();
+    clearTimeout(swapSave); swapSave = setTimeout(function(){ sendLead("curated"); }, 1500);
+  });
+  $("#rvGroups").addEventListener("click", function(e){ var b = e.target.closest(".swap"); if (b) openSwap(b); });
   function showReveal(){
     var d = state.domain, other = state.mode === "other";
+    drawBox(d);
     sendLead("curated");
     $("#rvName").textContent = d.name;
     $("#rvCurated").textContent = d.curated;
     $("#rvLine").textContent = d.line;
     $("#rvEdition").textContent = d.edition;
-    $("#rvGroups").innerHTML = d.groups.map(groupHTML).join("");
+    $("#rvGroups").innerHTML = boxGroups(d).map(groupHTML).join("") + '<p class="rv-note">' + esc(BOX.note) + '</p>';
     $("#toCheckout").textContent = other ? "Send their AI Badhai Box for ₹249" : "Get my AI Badhai Box for ₹249";
     go("reveal");
     // plain timers (not later()): leaving the screen early must not leave cards hidden
@@ -402,13 +478,18 @@
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; dform.reset(); go("who"); });
+  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; picksByDomain = {}; dform.reset(); go("who"); });
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */
   var heroEl = $(".v3-hero");
   if (heroEl && window.BGFX && BGFX.v2 && BGFX.v6){ try { heroEl.dataset.bgfx = "overlay"; heroEl.dataset.fxStrings = "off"; BGFX.v2.init(heroEl); BGFX.v6.init(heroEl);
     var hc = heroEl.querySelectorAll(":scope > canvas"); if (hc[0]) hc[0].dataset.fx = "scene"; if (hc[1]) hc[1].dataset.fx = "embers"; } catch (e){ console.error(e); } }
+  // soft Diwali fireworks: hero (above the rangoli canvases, under the arch and the relatives) and the black footer
+  if (window.Fireworks){
+    if (heroEl) Fireworks.mount(heroEl, { after: ":scope > canvas:last-of-type", zone: [0.06, 0.94, 0.08, 0.26] });
+    var footEl = document.querySelector("footer.closing"); if (footEl) Fireworks.mount(footEl, { zone: [0, 1, 0.14, 0.48], xs: [[0.03, 0.17], [0.83, 0.97]], every: [1.8, 3.4] }); // side bands: clear of the logo and the legal text
+  }
 
   /* ---------- builder background: small living rangoli (bgfx v6), started the first time the builder opens ----------
      The screens cover most of it, so pointer events on the builder are forwarded to the layer to keep it reacting everywhere. */

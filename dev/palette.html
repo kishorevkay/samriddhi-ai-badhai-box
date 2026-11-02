@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badhai Box · Colour editor</title>
+<!-- Local colour playground: the real site in a frame, every colour of styles.css mapped to a few roles you can change live.
+     Run node dev/server.js, open /dev/palette.html. Nothing here changes the site files; "Copy palette" gives the values to hand over. -->
+<style>
+  :root { --ui: #16161a; --ui2: #1f1f25; --ui3: #2a2a32; --tx: #ececf1; --tx2: #9a9aa6; --hl: #8ab4ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #0d0d10; color: var(--tx); font: 13px/1.4 Inter, system-ui, sans-serif; }
+  .app { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
+  aside { background: var(--ui); border-right: 1px solid var(--ui3); overflow-y: auto; padding: 16px 16px 40px; }
+  h1 { font-size: 15px; margin: 0 0 2px; } .hint { color: var(--tx2); margin: 0 0 14px; font-size: 12px; }
+  h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--tx2); margin: 18px 0 8px; }
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .preset { background: var(--ui2); border: 1.5px solid var(--ui3); border-radius: 10px; padding: 8px; color: var(--tx); text-align: left; cursor: pointer; font: 600 12px Inter, sans-serif; }
+  .preset:hover { border-color: #555; } .preset.on { border-color: var(--hl); }
+  .preset .sw { display: flex; height: 18px; border-radius: 5px; overflow: hidden; margin-bottom: 6px; }
+  .preset .sw i { flex: 1; }
+  .role { display: grid; grid-template-columns: 34px 1fr 78px; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--ui2); }
+  .role input[type=color] { width: 34px; height: 34px; padding: 0; border: 1px solid var(--ui3); border-radius: 8px; background: none; cursor: pointer; }
+  .role input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; } .role input[type=color]::-webkit-color-swatch { border: 0; border-radius: 6px; }
+  .role .nm b { display: block; font-size: 12.5px; } .role .nm span { color: var(--tx2); font-size: 11px; }
+  .role input[type=text] { width: 78px; background: var(--ui2); border: 1px solid var(--ui3); color: var(--tx); border-radius: 6px; padding: 6px; font: 12px ui-monospace, Menlo, monospace; text-transform: uppercase; }
+  .chips { grid-column: 2 / -1; display: flex; gap: 4px; flex-wrap: wrap; }
+  .chips button { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.18); cursor: pointer; padding: 0; }
+  .chips button:hover { transform: scale(1.2); border-color: #fff; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .btn { background: var(--ui2); border: 1px solid var(--ui3); color: var(--tx); border-radius: 8px; padding: 8px 12px; font: 600 12px Inter, sans-serif; cursor: pointer; }
+  .btn:hover { border-color: #666; } .btn.on { border-color: var(--hl); color: var(--hl); }
+  .btn.primary { background: var(--hl); color: #0d0d10; border-color: var(--hl); }
+  main { position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .top { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--ui3); background: var(--ui); flex-wrap: wrap; }
+  .top .sp { flex: 1; } .top .msg { color: var(--tx2); font-size: 12px; }
+  .stage { flex: 1; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; padding: 16px; }
+  .frame { transform-origin: top center; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.6); background: #000; flex: none; }
+  iframe { display: block; border: 0; width: 100%; height: 100%; }
+  @media (max-width: 800px) { .app { grid-template-columns: 1fr; grid-template-rows: auto 70vh; } aside { max-height: 45vh; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <h1>AI Badhai Box · Colour editor</h1>
+    <p class="hint">Pick a preset, then change any role. The dots under each colour are that role from every preset, for mixing and matching.</p>
+    <h2>Presets</h2>
+    <div class="presets" id="presets"></div>
+    <h2>Colours</h2>
+    <div id="roles"></div>
+    <div class="bar">
+      <button class="btn primary" id="copy">Copy palette</button>
+      <button class="btn" id="reset">Back to current site</button>
+    </div>
+  </aside>
+  <main>
+    <div class="top">
+      <button class="btn on" data-view="desktop">Desktop</button>
+      <button class="btn" data-view="phone">Phone</button>
+      <span class="sp"></span>
+      <button class="btn on" data-page="/">Landing page</button>
+      <button class="btn" data-page="/?screens=1">Builder screens</button>
+      <span class="msg" id="msg"></span>
+    </div>
+    <div class="stage" id="stage"><div class="frame" id="frame"><iframe id="site" src="/" title="Site preview"></iframe></div></div>
+  </main>
+</div>
+<script>
+(function () {
+  // roles: every colour in styles.css / index.html maps to one of these
+  var ROLES = [
+    ["bg", "Background", "hero + main red bands"],
+    ["bgDeep", "Background shade", "lower half of bands"],
+    ["night", "Darkest tone", "footer, gradients, canvas glow"],
+    ["shadow", "Shadow tint", "card shadows, dim overlay"],
+    ["footer", "Footer", "footer band behind the fireworks"],
+    ["accent", "Accent", "section labels, small highlights"],
+    ["accentDeep", "Accent dark", "hover / pressed states"],
+    ["ink", "Heading ink", "titles + numbers on cream"],
+    ["inkSoft", "Soft ink", "hero tagline"],
+    ["cream", "Cream", "text on dark, arch, cream bands"],
+    ["paper", "Card paper", "box cards, pop-ups"],
+    ["gold", "Gold", "strings, borders, stars"],
+    ["goldHi", "Light gold", "highlights on dark"],
+    ["goldInk", "Dark gold", "small gold text on cream"]
+  ];
+  var PRESETS = [
+    { name: "Crimson (live now)", c: { bg: "#8E1730", bgDeep: "#7A1128", night: "#470B15", shadow: "#280008", accent: "#EE2C3C", accentDeep: "#C8102E", ink: "#9B1B30", inkSoft: "#A13A40", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#D9A84A", goldHi: "#F3D9A0", goldInk: "#9C6B1E" } },
+    { name: "Diwali night (indigo)", c: { bg: "#26215F", bgDeep: "#1D1A4D", night: "#0E0C2B", shadow: "#07061A", accent: "#F26B3A", accentDeep: "#D9531F", ink: "#2B2670", inkSoft: "#57529A", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#E8B04B", goldHi: "#F6DCA0", goldInk: "#9A6A12" } },
+    { name: "Peacock teal", c: { bg: "#0E5158", bgDeep: "#0A4046", night: "#052629", shadow: "#021416", accent: "#E9792A", accentDeep: "#C8601A", ink: "#0E5158", inkSoft: "#3B7479", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#E2B04A", goldHi: "#F4DA9E", goldInk: "#8E6514" } },
+    { name: "Royal plum", c: { bg: "#4B1D4F", bgDeep: "#3C163F", night: "#220B24", shadow: "#140515", accent: "#E8507A", accentDeep: "#C7375F", ink: "#5A2160", inkSoft: "#7E4884", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#DDB04F", goldHi: "#F3DBA4", goldInk: "#8F6516" } },
+    { name: "Emerald", c: { bg: "#0F5B3E", bgDeep: "#0B4731", night: "#05281B", shadow: "#03160F", accent: "#E9962F", accentDeep: "#CC7A16", ink: "#0F5B3E", inkSoft: "#3D7D61", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#E2B24E", goldHi: "#F4DCA2", goldInk: "#8C6514" } },
+    { name: "Marigold", c: { bg: "#B5461C", bgDeep: "#933714", night: "#4E1A08", shadow: "#2A0C03", accent: "#D2491F", accentDeep: "#A8360F", ink: "#8A2E10", inkSoft: "#A5502E", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#F2C14E", goldHi: "#F9E0A2", goldInk: "#8F5F0A" } },
+    { name: "Navy + upGrad red", c: { bg: "#15306B", bgDeep: "#102658", night: "#08142F", shadow: "#040A18", accent: "#EE2C3C", accentDeep: "#C8102E", ink: "#15306B", inkSoft: "#3D5590", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#E2B65A", goldHi: "#F3D9A0", goldInk: "#9C6B1E" } },
+    { name: "Charcoal + gold", c: { bg: "#2B2622", bgDeep: "#221E1B", night: "#121010", shadow: "#080706", accent: "#D94E3A", accentDeep: "#B83A28", ink: "#2B2622", inkSoft: "#5C534B", cream: "#FBF4E8", paper: "#FFFBF4", gold: "#D9A84A", goldHi: "#F1D8A0", goldInk: "#8E6418" } }
+  ];
+  PRESETS.forEach(function (p) { p.c.footer = p.c.footer || "#0C0A0A"; });
+  // literal colours in the site's CSS → role (hex lower-case; rgb as "r,g,b"; alpha is kept)
+  var HEX = { "#8e1730": "bg", "#9a1b2b": "bg", "#8a1827": "bg", "#7a1128": "bgDeep", "#721322": "bgDeep", "#470b15": "night", "#0c0a0a": "footer", "#2a0610": "shadow",
+    "#ee2c3c": "accent", "#c8102e": "accentDeep", "#8e0e1a": "accentDeep", "#9b1b30": "ink", "#5a1020": "ink", "#a13a40": "inkSoft",
+    "#fbf4e8": "cream", "#f8efdf": "cream", "#fffbf4": "paper", "#fffbf3": "paper", "#e2b65a": "gold", "#d9a84a": "gold", "#f3d9a0": "goldHi", "#9c6b1e": "goldInk" };
+  var RGB = { "71,11,21": "night", "60,0,8": "shadow", "30,0,6": "shadow", "30,0,8": "shadow", "40,0,8": "shadow", "40,0,10": "shadow", "30,4,10": "shadow", "80,0,20": "shadow", "94,7,16": "shadow", "25,0,6": "shadow", "138,24,39": "bg", "255,251,244": "paper", "156,107,30": "goldInk", "168,114,27": "goldInk",
+    "238,44,60": "accent", "200,16,46": "accentDeep", "248,239,223": "cream", "217,168,74": "gold", "226,182,90": "gold", "243,217,160": "goldHi", "246,231,200": "goldHi" };
+
+  var KEY = "badhai-palette-v1", cur = Object.assign({}, PRESETS[0].c, load() || {}), cssText = null, view = "desktop";
+  var $ = function (s) { return document.querySelector(s); }, site = $("#site");
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(cur)); } catch (e) {} }
+
+  function roleVar(role, alpha) { return alpha == null ? "var(--pe-" + role + ")" : "color-mix(in srgb, var(--pe-" + role + ") " + Math.round(alpha * 1000) / 10 + "%, transparent)"; }
+  function transform(css) {
+    return css
+      .replace(/#[0-9a-fA-F]{6}\b/g, function (h) { var r = HEX[h.toLowerCase()]; return r ? roleVar(r) : h; })
+      .replace(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/g, function (m, r, g, b, a) { var k = RGB[r + "," + g + "," + b]; return k ? roleVar(k, a == null ? 1 : parseFloat(a)) : m; });
+  }
+  function vars() { return ":root{" + ROLES.map(function (r) { return "--pe-" + r[0] + ":" + cur[r[0]] + ";"; }).join("") + "}"; }
+
+  // into the frame: swap styles.css for the role-mapped copy, recolour inline SVG, then keep the role values in sync
+  function inject() {
+    var d = site.contentDocument; if (!d || !d.head || !cssText) return;
+    var link = d.querySelector('link[rel="stylesheet"][href*="styles.css"]');
+    if (link && !d.getElementById("pe-css")) {
+      var st = d.createElement("style"); st.id = "pe-css"; st.textContent = transform(cssText); link.after(st); link.disabled = true;
+      d.querySelectorAll("[fill],[stroke]").forEach(function (el) {
+        ["fill", "stroke"].forEach(function (p) { var v = (el.getAttribute(p) || "").toLowerCase(), r = HEX[v]; if (r) el.style[p] = "var(--pe-" + r + ")"; });
+      });
+    }
+    var vs = d.getElementById("pe-vars"); if (!vs) { vs = d.createElement("style"); vs.id = "pe-vars"; d.head.appendChild(vs); }
+    vs.textContent = vars();
+    var meta = d.querySelector('meta[name="theme-color"]'); if (meta) meta.content = cur.bg;
+  }
+  function apply() { save(); inject(); paintRoles(); markPreset(); }
+
+  // panel
+  function presetHTML(p, i) { return '<button class="preset" data-i="' + i + '"><span class="sw">' + ["bg", "night", "accent", "ink", "cream", "gold"].map(function (k) { return '<i style="background:' + p.c[k] + '"></i>'; }).join("") + "</span>" + p.name + "</button>"; }
+  $("#presets").innerHTML = PRESETS.map(presetHTML).join("");
+  $("#presets").addEventListener("click", function (e) { var b = e.target.closest(".preset"); if (!b) return; cur = Object.assign({}, PRESETS[+b.dataset.i].c); apply(); });
+  function markPreset() { document.querySelectorAll(".preset").forEach(function (b) { var c = PRESETS[+b.dataset.i].c; b.classList.toggle("on", ROLES.every(function (r) { return c[r[0]].toLowerCase() === cur[r[0]].toLowerCase(); })); }); }
+  $("#roles").innerHTML = ROLES.map(function (r) {
+    return '<div class="role" data-k="' + r[0] + '"><input type="color" aria-label="' + r[1] + '"><div class="nm"><b>' + r[1] + "</b><span>" + r[2] + '</span></div><input type="text" maxlength="7" aria-label="' + r[1] + ' hex">' +
+      '<div class="chips">' + PRESETS.map(function (p) { return '<button title="' + p.name + " · " + p.c[r[0]] + '" data-v="' + p.c[r[0]] + '" style="background:' + p.c[r[0]] + '"></button>'; }).join("") + "</div></div>";
+  }).join("");
+  function paintRoles() { document.querySelectorAll(".role").forEach(function (row) { var v = cur[row.dataset.k]; row.querySelector("[type=color]").value = v; var t = row.querySelector("[type=text]"); if (document.activeElement !== t) t.value = v; }); }
+  $("#roles").addEventListener("input", function (e) {
+    var row = e.target.closest(".role"); if (!row) return;
+    var v = e.target.value.trim(); if (v[0] !== "#") v = "#" + v;
+    if (/^#[0-9a-f]{6}$/i.test(v)) { cur[row.dataset.k] = v.toUpperCase(); apply(); }
+  });
+  $("#roles").addEventListener("click", function (e) { var b = e.target.closest(".chips button"); if (!b) return; cur[b.closest(".role").dataset.k] = b.dataset.v; apply(); });
+  $("#reset").addEventListener("click", function () { cur = Object.assign({}, PRESETS[0].c); apply(); });
+  $("#copy").addEventListener("click", function () {
+    var txt = "AI Badhai Box palette\n" + ROLES.map(function (r) { return r[1] + ": " + cur[r[0]]; }).join("\n");
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { flash("Copied. Paste it to Claude to make it the site's colours."); }, function () { prompt("Copy this:", txt); });
+  });
+  function flash(t) { $("#msg").textContent = t; clearTimeout(flash.t); flash.t = setTimeout(function () { $("#msg").textContent = ""; }, 4000); }
+
+  // views: desktop 1440 wide, phone 390x844, scaled to fit the stage
+  function fit() {
+    var st = $("#stage"), fr = $("#frame"), W = view === "phone" ? 390 : 1440, H = view === "phone" ? 844 : 900;
+    var avW = st.clientWidth - 32, avH = st.clientHeight - 32, s = Math.min(1, avW / W, view === "phone" ? avH / H : 10);
+    if (view === "desktop") H = Math.round(avH / s);
+    fr.style.width = W + "px"; fr.style.height = H + "px"; fr.style.transform = "scale(" + s + ")";
+  }
+  document.querySelectorAll("[data-view]").forEach(function (b) { b.addEventListener("click", function () { view = b.dataset.view; document.querySelectorAll("[data-view]").forEach(function (x) { x.classList.toggle("on", x === b); }); fit(); }); });
+  document.querySelectorAll("[data-page]").forEach(function (b) { b.addEventListener("click", function () { document.querySelectorAll("[data-page]").forEach(function (x) { x.classList.toggle("on", x === b); }); site.src = b.dataset.page; }); });
+  window.addEventListener("resize", fit);
+  site.addEventListener("load", inject);
+  fetch("/styles.css", { cache: "no-store" }).then(function (r) { return r.text(); }).then(function (t) { cssText = t; inject(); });
+  fit(); paintRoles(); markPreset();
+})();
+</script>
+</body>
+</html>

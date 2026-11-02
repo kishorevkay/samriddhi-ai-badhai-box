@@ -4,6 +4,7 @@
 //   stage "pay"      → the visitor pressed the pay button (sent to Razorpay)
 // One row per visit, keyed by a random id from the browser; later stages update the same row.
 // Every stage needs consent: true (the required tick in the pop-up); the row keeps consent + consentAt.
+// box = the exact courses drawn into the visitor's box (with their swaps), so the team knows what to unlock.
 import { P, pipeline, cleanPhone, cleanEmail, cleanText, clientIp } from "./_lib.js";
 
 const STAGES = ["details", "curated", "pay"];
@@ -27,6 +28,7 @@ export default async function handler(req, res) {
     if (!recipient.name || !recipient.phone || !recipient.email) return res.status(400).json({ error: "their name, mobile and email are needed" });
   }
   const domain = DOMAINS.includes(b.domain) ? b.domain : "";
+  const box = cleanBox(b.box);
   // consent tick in the details pop-up is required; keep the time it was ticked (browser clock, else server time)
   if (b.consent !== true) return res.status(400).json({ error: "consent is needed" });
   const consentAt = typeof b.consentAt === "string" && !isNaN(Date.parse(b.consentAt)) ? new Date(b.consentAt).toISOString() : "";
@@ -46,6 +48,7 @@ export default async function handler(req, res) {
       stage: rank(stage) >= rank(prev.stage || "details") ? stage : prev.stage, // never move backwards
       mode, buyer, recipient, domain: domain || prev.domain || "",
       consent: true, consentAt: prev.consentAt || consentAt || now,
+      box: box || prev.box || null,
       source: prev.source || cleanText(b.source, 160),
       device: prev.device || (/Mobi|Android|iPhone/i.test(String(req.headers["user-agent"] || "")) ? "mobile" : "desktop"),
     };
@@ -58,6 +61,15 @@ export default async function handler(req, res) {
     console.error(e);
     return res.status(500).json({ error: "could not save" });
   }
+}
+
+// the exact courses in the visitor's box (drawn at random, swappable): short strings only, known keys only
+function cleanBox(x) {
+  if (!x || typeof x !== "object") return null;
+  const one = (v) => cleanText(v, 160);
+  const list = (v) => (Array.isArray(v) ? v.slice(0, 6).map(one).filter(Boolean) : []);
+  const box = { essential: one(x.essential), mastery: one(x.mastery), short: list(x.short), ai: list(x.ai), free: list(x.free), bigger: list(x.bigger) };
+  return box.mastery ? box : null;
 }
 
 function safeJson(s) { try { return JSON.parse(s); } catch { return null; } }

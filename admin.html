@@ -45,6 +45,7 @@
   .tag.curated { background: #FBE7EA; color: var(--red); }
   .empty { padding: 40px; text-align: center; color: var(--soft); }
   .note { max-width: 260px; color: var(--soft); font-size: 12px; }
+  .courses { min-width: 260px; max-width: 340px; font-size: 12px; line-height: 1.45; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -72,7 +73,7 @@
       <select id="fDomain"><option value="">All domains</option><option>Data &amp; AI</option><option>Tech &amp; AI</option><option>Marketing &amp; AI</option><option>Management &amp; AI</option></select>
     </div>
     <div class="wrap"><table>
-      <thead><tr><th>When (IST)</th><th>Stage</th><th>For</th><th>Domain</th><th>Buyer</th><th>Recipient</th><th>Diwali note</th><th>Device · source</th></tr></thead>
+      <thead><tr><th>When (IST)</th><th>Stage</th><th>For</th><th>Domain</th><th>Courses in the box</th><th>Buyer</th><th>Recipient</th><th>Diwali note</th><th>Device · source</th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
   </section>
@@ -126,18 +127,24 @@
         '<td><span class="tag ' + esc(l.stage) + '">' + esc(STAGE[l.stage] || l.stage) + "</span></td>" +
         "<td>" + (l.mode === "other" ? "Someone I love" : "Me") + "</td>" +
         "<td>" + esc(l.domain || "—") + "</td>" +
+        '<td class="courses">' + (l.box ? esc(courseList(l.box)) : '<span class="sub">—</span>') + "</td>" +
         "<td>" + esc(b.name) + '<div class="sub">' + esc(b.phone) + "<br>" + esc(b.email) + "</div></td>" +
         "<td>" + (r ? esc(r.name) + '<div class="sub">' + esc(r.phone) + "<br>" + esc(r.email) + "</div>" : '<span class="sub">—</span>') + "</td>" +
         '<td class="note">' + esc(r && r.note) + "</td>" +
         '<td class="sub">' + esc(l.device) + (l.source ? "<br>" + esc(l.source) : "") + "</td></tr>";
-    }).join("") : '<tr><td colspan="8" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
+    }).join("") : '<tr><td colspan="9" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
+  }
+  // the exact courses in the visitor's box, as one comma-separated list (leads from before 2 Nov have none)
+  function courseList(box){
+    if (!box) return "";
+    return ["essential", "mastery", "short", "ai", "free", "bigger"].reduce(function(all, k){ return all.concat(box[k] || []); }, []).join(", ");
   }
   function csv(){
-    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id"];
+    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id"];
     var cell = function(v){ v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
     var lines = [cols.join(",")].concat(filtered().map(function(l){
       var b = l.buyer || {}, r = l.recipient || {};
-      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id].map(cell).join(",");
+      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id].map(cell).join(",");
     }));
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));

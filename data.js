@@ -15,44 +15,53 @@ window.TILES = [
   { t: "Capstones", img: "T9_capstones" }
 ];
 
-// groups render in order. k = label, t = title, d = description, m = badge (coupon: true = coupon colour),
-// items = bullet list, intro = line above the bullets, note/tag = closing line and badge (bigger move), wide = full row
+// The box (course sheet "AI Badhai Box courses", 2026-11-02). Everyone gets the essential, the AI learning pick and the common
+// Executive PG; the rest comes from the chosen domain. pick = how many are drawn at random from each pool; every drawn course can be
+// swapped for another one from its pool. offer = the badge per section. info = learning hours · eligibility · mode of delivery, shown once per section.
+window.BOX = {
+  essential: "Microsoft Generative AI Essentials",
+  ai: ["Introduction to Agentic Systems", "AI Fundamentals: LLM Training Considerations"],
+  common: { t: "Executive PG in Applied AI and Agentic AI" },
+  pick: { short: 2, ai: 1, free: 3, flagship: 1 },
+  info: {
+    essential: ["6 hrs", "High School", "Self-paced"],
+    mastery: ["40 hrs", "Undergrad", "Self-paced"],
+    short: ["2 hrs each", "High School", "Self-paced"],
+    ai: ["2 hrs", "High School", "Self-paced"],
+    free: ["6 hrs each", "Undergrad", "Self-paced"],
+    bigger: [null, "Graduate or Higher", "Blended"]
+  },
+  // offer badge per section (sheet column A)
+  offer: { essential: "Completely Free - 100% Off", mastery: "Flat 75% Off", short: "100% Off", ai: "100% Off", free: "FREE", bigger: "Scholarships Available" },
+  note: "Program-specific details might differ and will be shared over email."
+};
+
+// focus = what the mastery track is "built around"; flagship = the bigger-move pool (t = programme, by = institution)
 window.DOMAINS = [
-  { id: "data", name: "Data & AI", icon: "chart", tile: "d1_data_ai", edition: "DATA & AI EDITION",
+  { id: "data", name: "Data & AI", focus: "Data & AI", icon: "chart", tile: "d1_data_ai", edition: "DATA & AI EDITION",
     curated: "Curated for Data & AI.", line: "Learning for where data can take you next.",
-    groups: [
-      { k: "Mastery track", items: ["Data Science & Analytics Mastery Track"] },
-      { k: "Short courses", items: ["Python for Data Science & AI", "Building an ETL Pipeline", "Fundamentals of Applied Statistics", "Statistics for Beginners"] },
-      { k: "Free courses", wide: true, items: ["Fundamentals of Deep Learning & Neural Networks", "Introduction to Data Analysis using Excel", "Introduction to NLP", "Unsupervised Learning: Clustering", "Advanced SQL for Analysis", "Introduction to Tableau"] },
-      { k: "For the bigger move", big: true, items: ["Executive Post Graduate Certificate Programme in Data Science & AI from IIITB", "Master of Science in Data Science from Liverpool John Moores University"] }
-    ] },
-  { id: "tech", name: "Tech & AI", icon: "code", tile: "d2_tech_ai", edition: "TECH & AI EDITION",
+    mastery: "Microsoft Data Science & Analytics Mastery Track",
+    short: ["Python for Data Science & AI", "Building an ETL Pipeline", "Fundamentals of Applied Statistics", "Statistics for Beginners"],
+    free: ["Fundamentals of Deep Learning & Neural Networks", "Introduction to Data Analysis using Excel", "Introduction to NLP", "Unsupervised Learning: Clustering", "Advanced SQL for Analysis", "Introduction to Tableau"],
+    flagship: [{ t: "Executive Post Graduate Certificate Programme in Data Science & AI", by: "IIIT Bangalore" }, { t: "Master of Science in Data Science", by: "Liverpool John Moores University" }] },
+  { id: "tech", name: "Tech & AI", focus: "Tech & AI", icon: "code", tile: "d2_tech_ai", edition: "TECH & AI EDITION",
     curated: "Curated for Tech & AI.", line: "Learning for what you want to build next.",
-    groups: [
-      { k: "Mastery track", items: ["Software Development Mastery Track"] },
-      { k: "Short courses", items: ["Machine Learning Fundamentals", "ML Fundamentals: NLP", "ML Fundamentals: Object Detection", "Workflow Orchestration with Google Cloud Composer"] },
-      { k: "Free courses", wide: true, items: ["Fundamentals of Cloud Computing", "Data Structures & Algorithms", "Core Java Basics", "React.js for Beginners", "Node.js for Beginners", "Fundamentals of Cybersecurity"] },
-      { k: "For the bigger move", big: true, items: ["Executive PG in Forward Deployed AI Engineering, IIIT Bangalore", "Chief Technology Officer & AI Leadership Programme", "Doctor of Technology in Applied & Agentic AI, GGU"] }
-    ] },
-  { id: "mkt", name: "Marketing & AI", icon: "spark", tile: "d3_marketing_ai", edition: "MARKETING & AI EDITION",
+    mastery: "Microsoft Software Development Mastery Track",
+    short: ["Machine Learning Fundamentals", "ML Fundamentals: NLP", "ML Fundamentals: Object Detection", "Workflow Orchestration with Google Cloud Composer"],
+    free: ["Fundamentals of Cloud Computing", "Data Structures & Algorithms", "Core Java Basics", "React.js for Beginners", "Node.js for Beginners", "Fundamentals of Cybersecurity"],
+    flagship: [{ t: "Executive PG in Forward Deployed AI Engineering", by: "IIIT Bangalore" }, { t: "Chief Technology Officer & AI Leadership Programme" }, { t: "Doctor of Technology in Applied & Agentic AI", by: "Golden Gate University" }] },
+  { id: "mkt", name: "Marketing & AI", focus: "Marketing", icon: "spark", tile: "d3_marketing_ai", edition: "MARKETING & AI EDITION",
     curated: "Curated for Marketing & AI.", line: "A mix of Marketing & AI learning, from courses you can start right away to deeper programmes for the bigger move.",
-    groups: [
-      { k: "The essential", t: "Microsoft AI Essentials", d: "A foundation in Generative AI to get started.", m: "100% off this course" },
-      { k: "The mastery track", t: "Content & Marketing Mastery Track", d: "A deeper learning path built around Marketing.", m: "₹15,000 off the Content & Marketing Mastery Track", coupon: true },
-      { k: "Short courses", d: "Skills to sharpen what you do right now.", items: ["Paid Digital Marketing", "Organic Digital Marketing", "Social Media Marketing", "Data-driven Marketing"] },
-      { k: "AI learning", d: "Because whatever comes next will probably have AI in it.", items: ["Introduction to Agentic Systems", "AI Fundamentals: LLM Training Considerations"] },
-      { k: "Free courses", wide: true, d: "A few more skills to explore at your own pace.", items: ["Complete Guide to Content Marketing", "Fundamentals of Marketing", "Ultimate Guide to Email Marketing", "Basics of SEO", "Introduction to Social Media Marketing", "Web Analytics for Beginners"] },
-      { k: "For the bigger move", big: true, t: "Advanced Certificate in AI-Powered Digital Marketing & Communication", by: "MICA",
-        note: "A flagship programme with a scholarship opportunity for when the next move calls for something bigger.", tag: "Speak to a counsellor about available scholarships." }
-    ] },
-  { id: "mgmt", name: "Management & AI", icon: "compass", tile: "d4_management_ai", edition: "MANAGEMENT & AI EDITION",
+    mastery: "Microsoft Content & Marketing Mastery Track",
+    short: ["Paid Digital Marketing", "Organic Digital Marketing", "Social Media Marketing", "Data-driven Marketing"],
+    free: ["Complete Guide to Content Marketing", "Fundamentals of Marketing", "Ultimate Guide to Email Marketing", "Basics of SEO", "Introduction to Social Media Marketing", "Web Analytics for Beginners"],
+    flagship: [{ t: "Advanced Certificate in AI-Powered Digital Marketing & Communication", by: "MICA" }] },
+  { id: "mgmt", name: "Management & AI", focus: "Management", icon: "compass", tile: "d4_management_ai", edition: "MANAGEMENT & AI EDITION",
     curated: "Curated for Management & AI.", line: "Learning for where you want to lead next.",
-    groups: [
-      { k: "Mastery track", items: ["Managerial Excellence Mastery Track"] },
-      { k: "Short courses", items: ["Leading Teams and Organisations", "Management Fundamentals: Strategy", "Management Fundamentals: Managerial Communication", "Solving Problems: Guesstimates"] },
-      { k: "Free courses", wide: true, items: ["Business Analytics Fundamentals", "Introduction to Design Thinking", "Business Communication Masterclass", "Economics Masterclass", "Introduction to HR Analytics", "How to Sell Anything"] },
-      { k: "For the bigger move", big: true, intro: "Explore these programmes", items: ["Strategic AI for Business Professionals, IIM Kozhikode", "General Management for Young Leaders, IIM Bangalore", "MBA, Golden Gate University", "DBA in Emerging Technologies"] }
-    ] }
+    mastery: "Microsoft Managerial Excellence Mastery Track",
+    short: ["Leading Teams and Organisations", "Management Fundamentals: Strategy", "Management Fundamentals: Managerial Communication", "Solving Problems: Guesstimates"],
+    free: ["Business Analytics Fundamentals", "Introduction to Design Thinking", "Business Communication Masterclass", "Economics Masterclass", "Introduction to HR Analytics", "How to Sell Anything"],
+    flagship: [{ t: "DBA in Emerging Technologies (Gen & Agentic AI)" }, { t: "MBA", by: "Golden Gate University" }, { t: "Strategic AI for Business Professionals", by: "IIM Kozhikode" }, { t: "General Management for Young Leaders (YLP)", by: "IIM Bangalore" }] }
 ];
 
 // Scroll 4 curation lines. {d} = domain name. Each line can drop a card into the box (drop: card colour key).
