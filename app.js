@@ -214,6 +214,7 @@
     var body = { id: leadId, stage: stage, mode: state.mode, domain: state.domain ? state.domain.name : "",
       buyer: { name: v("g-name"), phone: v("g-phone"), email: v("g-email") },
       recipient: other ? { name: v("r-name"), phone: v("r-phone"), email: v("r-email"), note: v("note") } : null,
+      consent: $("#consent").checked, consentAt: consentAt,
       source: (function(){ var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(k){ u.delete(k); }); return u.toString().slice(0, 160); })() };
     try { fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) {}
   }
@@ -285,9 +286,13 @@
   function closeDetails(){ dpop.hidden = true; if (dReturn && dReturn.focus) dReturn.focus({ preventScroll: true }); }
   dpop.querySelectorAll("[data-dclose]").forEach(function(b){ b.addEventListener("click", closeDetails); });
   dform.addEventListener("input", function(e){ e.target.classList.remove("bad"); });
+  // consent: unticked by default, required to continue; the time it was ticked goes with the lead
+  var consentAt = "";
+  $("#consent").addEventListener("change", function(e){ consentAt = e.target.checked ? new Date().toISOString() : ""; e.target.closest(".consent").classList.remove("bad"); });
   dform.addEventListener("submit", function(e){ e.preventDefault();
     var ok = ["r-name", "r-phone", "r-email", "g-name", "g-phone", "g-email"].map(valid).every(Boolean), hint = $("#dpopHint");
     if (!ok){ hint.textContent = "Check the highlighted details."; hint.classList.add("err"); var bad = dform.querySelector(".bad"); if (bad) bad.focus(); return; }
+    if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; hint.classList.add("err"); $("#consent").focus(); return; }
     dpop.hidden = true;
     if (!leadId) leadId = newLeadId();
     sendLead(state.domain ? "curated" : "details");
@@ -395,7 +400,7 @@
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; dform.reset(); go("who"); });
+  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; dform.reset(); go("who"); });
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */

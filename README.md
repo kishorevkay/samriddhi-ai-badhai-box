@@ -37,7 +37,9 @@ The builder writes **one lead per visit** and updates it as the visitor moves th
 | `curated` | A domain is picked and the curated box is shown | Saw their box |
 | `pay` | The pay button is pressed (the visitor goes to Razorpay) | Pressed pay |
 
-Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `device`, `source` (UTM / query string).
+Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `device`, `source` (UTM / query string).
+
+**Consent:** the details pop-up has a required, unticked-by-default checkbox (agree to upGrad's Privacy Policy and Terms of Use, and consent to be contacted by phone, email, SMS and WhatsApp). The visitor can't continue without it, and `api/lead.js` rejects any lead without `consent: true`. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet. The footer carries the legal disclaimer. The Privacy Policy link goes to https://www.upgrad.com/privacy/, and Terms of Use and T&C go to https://www.upgrad.com/terms/.
 
 Validation happens in the browser and again on the server (10-digit Indian mobile, valid email, length limits). Writes are rate-limited to 30 a minute per IP.
 

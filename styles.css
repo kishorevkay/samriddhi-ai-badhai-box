@@ -628,3 +628,14 @@ html.lenis, html.lenis body { height: auto; }
 .who .who-img { display: flex; justify-content: center; align-items: flex-end; height: 210px; margin: -30px -28px 14px; padding-top: 16px; background: radial-gradient(70% 90% at 50% 100%, #F6E3C0 0%, #FEF6E8 60%, #FFFBF3 100%); }
 .who .who-img img { height: 100%; width: auto; max-width: 100%; object-fit: contain; display: block; }
 @media (max-width: 640px) { .who .who-img { height: 150px; margin: -22px -20px 10px; } }
+
+/* consent tick in the details pop-up + legal small print in the footer (2026-11-02) */
+.consent { display: flex; align-items: flex-start; gap: 10px; margin: 2px 0 6px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; }
+.consent.bad { border-color: var(--red); background: #FFF5F5; }
+.consent input { flex: none; width: 20px; height: 20px; min-width: 0; margin: 1px 0 0; padding: 0; accent-color: var(--v3-red); cursor: pointer; }
+.consent label { display: block; font: 400 13px/1.5 var(--body); letter-spacing: 0; text-transform: none; color: var(--ink-soft); cursor: pointer; }
+.consent a { color: var(--v3-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.legal { max-width: 860px; margin: 34px auto 0; padding-top: 22px; border-top: 1px solid rgba(248,239,223,.16); font: 400 12px/1.6 var(--body); color: rgba(248,239,223,.62); text-align: center; }
+.legal a { color: rgba(246,231,200,.9); text-decoration: underline; text-underline-offset: 2px; }
+.legal a:hover { color: var(--gold-hi); }
+@media (max-width: 640px) { .legal { font-size: 11.5px; text-align: left; margin-top: 26px; } }

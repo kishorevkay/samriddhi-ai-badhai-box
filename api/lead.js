@@ -3,6 +3,7 @@
 //   stage "curated"  → a domain was picked and the box was shown
 //   stage "pay"      → the visitor pressed the pay button (sent to Razorpay)
 // One row per visit, keyed by a random id from the browser; later stages update the same row.
+// Every stage needs consent: true (the required tick in the pop-up); the row keeps consent + consentAt.
 import { P, pipeline, cleanPhone, cleanEmail, cleanText, clientIp } from "./_lib.js";
 
 const STAGES = ["details", "curated", "pay"];
@@ -26,6 +27,9 @@ export default async function handler(req, res) {
     if (!recipient.name || !recipient.phone || !recipient.email) return res.status(400).json({ error: "their name, mobile and email are needed" });
   }
   const domain = DOMAINS.includes(b.domain) ? b.domain : "";
+  // consent tick in the details pop-up is required; keep the time it was ticked (browser clock, else server time)
+  if (b.consent !== true) return res.status(400).json({ error: "consent is needed" });
+  const consentAt = typeof b.consentAt === "string" && !isNaN(Date.parse(b.consentAt)) ? new Date(b.consentAt).toISOString() : "";
 
   try {
     // light abuse guard: 30 writes a minute per IP
@@ -41,6 +45,7 @@ export default async function handler(req, res) {
       id, created: prev.created || now, updated: now,
       stage: rank(stage) >= rank(prev.stage || "details") ? stage : prev.stage, // never move backwards
       mode, buyer, recipient, domain: domain || prev.domain || "",
+      consent: true, consentAt: prev.consentAt || consentAt || now,
       source: prev.source || cleanText(b.source, 160),
       device: prev.device || (/Mobi|Android|iPhone/i.test(String(req.headers["user-agent"] || "")) ? "mobile" : "desktop"),
     };

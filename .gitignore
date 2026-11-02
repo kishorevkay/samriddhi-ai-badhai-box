@@ -8,6 +8,7 @@ node_modules/
 COPY_SOURCE*.txt
 MOBILE_TODO.md
 FEEDBACK_*.md
+TODO_*.md
 design_board.html
 sync_tiles.sh
 # unused drafts (old cartoon cut-outs, spare logo files)
