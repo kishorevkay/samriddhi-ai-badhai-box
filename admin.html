@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" href="/favicon.ico?v=1" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png?v=1">
-<link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png?v=1">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=1">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="icon" href="favicon.ico?v=1" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=1">
+<link rel="icon" type="image/png" sizes="96x96" href="assets/favicon-96.png?v=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
+<link rel="manifest" href="site.webmanifest">
 <meta name="theme-color" content="#8E1730">
 <meta name="robots" content="noindex, nofollow">
-<title>AI Badhai Box · Leads</title>
+<title>AI Badhaai Box · Leads</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <div><h1>AI Badhai Box · Leads</h1><small id="stamp">Samriddhi On. Sawaal Gone. · upGrad Diwali 2026</small></div>
+  <div><h1>AI Badhaai Box · Leads</h1><small id="stamp">Samriddhi On. Sawaal Gone. · upGrad Diwali 2026</small></div>
   <div id="actions" hidden><button class="btn" id="refresh">Refresh</button> <button class="btn" id="csv">Download CSV</button> <button class="btn" id="out">Log out</button></div>
 </header>
 
@@ -131,7 +131,7 @@
         "<td>" + esc(b.name) + '<div class="sub">' + esc(b.phone) + "<br>" + esc(b.email) + "</div></td>" +
         "<td>" + (r ? esc(r.name) + '<div class="sub">' + esc(r.phone) + "<br>" + esc(r.email) + "</div>" : '<span class="sub">—</span>') + "</td>" +
         '<td class="note">' + esc(r && r.note) + "</td>" +
-        '<td class="sub">' + esc(l.device) + (l.source ? "<br>" + esc(l.source) : "") + "</td></tr>";
+        '<td class="sub">' + esc(l.device) + (l.site ? "<br>" + esc(l.site) : "") + (l.source ? "<br>" + esc(l.source) : "") + "</td></tr>";
     }).join("") : '<tr><td colspan="9" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
   }
   // the exact courses in the visitor's box, as one comma-separated list (leads from before 2 Nov have none)
@@ -140,15 +140,15 @@
     return ["essential", "mastery", "short", "ai", "free", "bigger"].reduce(function(all, k){ return all.concat(box[k] || []); }, []).join(", ");
   }
   function csv(){
-    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id"];
+    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id", "site"];
     var cell = function(v){ v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
     var lines = [cols.join(",")].concat(filtered().map(function(l){
       var b = l.buyer || {}, r = l.recipient || {};
-      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id].map(cell).join(",");
+      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id, l.site].map(cell).join(",");
     }));
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
-    a.download = "ai-badhai-box-leads-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+    a.download = "ai-badhaai-box-leads-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
   }
 

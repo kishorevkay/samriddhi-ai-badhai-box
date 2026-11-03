@@ -11,6 +11,15 @@ const STAGES = ["details", "curated", "pay"];
 const DOMAINS = ["Data & AI", "Tech & AI", "Marketing & AI", "Management & AI"];
 
 export default async function handler(req, res) {
+  // copies of the site on other hosts (upgrad.com/your-diwali-gift) post here cross-site with a text/plain body and no cookies,
+  // so any origin may call it; OPTIONS is answered in case a browser or proxy preflights anyway
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "POST");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Max-Age", "86400");
+    return res.status(204).end();
+  }
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const b = typeof req.body === "string" ? safeJson(req.body) : req.body || {};
   const id = String(b.id || "");
@@ -50,6 +59,7 @@ export default async function handler(req, res) {
       consent: true, consentAt: prev.consentAt || consentAt || now,
       box: box || prev.box || null,
       source: prev.source || cleanText(b.source, 160),
+      site: prev.site || siteOf(req),
       device: prev.device || (/Mobi|Android|iPhone/i.test(String(req.headers["user-agent"] || "")) ? "mobile" : "desktop"),
     };
     await pipeline([
@@ -73,3 +83,11 @@ function cleanBox(x) {
 }
 
 function safeJson(s) { try { return JSON.parse(s); } catch { return null; } }
+
+// which copy of the site the lead came from (www.upgrad.com, samriddhi-gift-draft.vercel.app, …), from the browser's Origin / Referer
+function siteOf(req) {
+  for (const h of [req.headers.origin, req.headers.referer]) {
+    try { if (h && h !== "null") return cleanText(new URL(h).host, 80); } catch {}
+  }
+  return "";
+}

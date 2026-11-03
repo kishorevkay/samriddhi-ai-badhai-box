@@ -69,11 +69,11 @@ window.CURATION = {
   self: [
     ["Looking at where you want to go.", null], ["Finding the right AI skills.", "ai"], ["Choosing courses in {d}.", "mastery"],
     ["Adding something you can start right away.", "short"], ["Adding something for the bigger career move.", "bigger"],
-    ["Getting it ready for the next:\n“Aur beta, aage kya?”", "free"], ["Your AI Badhai Box is ready. ✨", "done"]
+    ["Getting it ready for the next:\n“Aur beta, aage kya?”", "free"], ["Your AI Badhaai Box is ready. ✨", "done"]
   ],
   other: [
     ["Finding the right AI skills.", "ai"], ["Choosing courses in {d}.", "mastery"],
     ["Adding something they can start right away.", "short"], ["Adding something for the bigger career move.", "bigger"],
-    ["Getting it ready for the next:\n“Aur beta, aage kya?”", "free"], ["Their AI Badhai Box is ready. ✨", "done"]
+    ["Getting it ready for the next:\n“Aur beta, aage kya?”", "free"], ["Their AI Badhaai Box is ready. ✨", "done"]
   ]
 };

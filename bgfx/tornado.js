@@ -1,4 +1,4 @@
-// Curation tornado for the builder: course cards whirl up in a golden funnel, pour into the AI Badhai Box, the lid shuts
+// Curation tornado for the builder: course cards whirl up in a golden funnel, pour into the AI Badhaai Box, the lid shuts
 // and gold dust bursts out. Ported from the teaser film's scene (TEASER_FILM/tornado), drawn on a transparent canvas over
 // the site's own background. create(el) → { ready, play(), stop() }; the timeline is in seconds and the lid shuts at CLOSE.
 import * as THREE from "../vendor/three.module.min.js";

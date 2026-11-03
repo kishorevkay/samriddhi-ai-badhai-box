@@ -1,6 +1,6 @@
-# AI Badhai Box by upGrad · Samriddhi On. Sawaal Gone.
+# AI Badhaai Box by upGrad · Samriddhi On. Sawaal Gone.
 
-upGrad's Diwali 2026 microsite. Visitors build a personalised AI-learning gift ("AI Badhai Box") for themselves or someone they love, then pay ₹249.
+upGrad's Diwali 2026 microsite. Visitors build a personalised AI-learning gift ("AI Badhaai Box") for themselves or someone they love, then pay ₹249.
 
 - **Live site:** https://samriddhi-gift-draft.vercel.app
 - **Leads dashboard:** https://samriddhi-gift-draft.vercel.app/admin (PIN-protected; ask the marketing team for the PIN)
@@ -19,7 +19,7 @@ Plain static site + two serverless functions. No framework, no build step, no np
 | `data.js` | **All campaign copy and the course catalogue**: `BOX` (common courses, how many are drawn per section, offer badges, hours / eligibility / mode) and `DOMAINS` (each domain's mastery track and its short, free and flagship pools), plus curation lines and carousel tiles. Edit courses here. |
 | `device.js` | Desktop "📱 Mobile view" toggle for reviewers (phone-frame preview of the same page). |
 | `bgfx/v2.js`, `bgfx/v6.js` | Reactive canvas backgrounds (floating embers, click-glow rangoli). |
-| `bgfx/tornado.js` + `vendor/three.module.min.js` + `assets/tornado/` | The curation screen ("Curating your AI Badhai Box…"): course cards whirl up in a golden tornado and pour into the box, the lid shuts as "…is ready" appears, gold dust bursts out. three.js (r160, vendored), loaded in the background when the builder opens. Falls back to the CSS gift box without WebGL or with "reduce motion". |
+| `bgfx/tornado.js` + `vendor/three.module.min.js` + `assets/tornado/` | The curation screen ("Curating your AI Badhaai Box…"): course cards whirl up in a golden tornado and pour into the box, the lid shuts as "…is ready" appears, gold dust bursts out. three.js (r160, vendored), loaded in the background when the builder opens. Falls back to the CSS gift box without WebGL or with "reduce motion". |
 | `bgfx/fireworks.js` | Soft background fireworks in the hero and the footer. Colours come from the page's colour tokens; pauses off-screen; off with "reduce motion". |
 | `admin.html` | Leads dashboard at `/admin`. |
 | `api/lead.js` | `POST /api/lead`: saves and updates a lead. |
@@ -27,6 +27,7 @@ Plain static site + two serverless functions. No framework, no build step, no np
 | `api/_lib.js`, `api/_mem.js` | Redis helper (Upstash REST, plain `fetch`) and an in-memory store for local dev. |
 | `dev/server.js` | Local server that runs the site and the API together. |
 | `dev/palette.html` | Local colour editor: the site in a frame with every colour mapped to 14 roles, 8 presets, desktop/phone views. Open http://localhost:5250/dev/palette.html. Not deployed. |
+| `dev/test_consent.mjs` | Playwright tests for the consent tick and Pay in Chromium and WebKit (Safari): 9 scenarios, including closing the pop-up unticked, unticking at checkout, and switching Me ↔ Someone I love. Lead requests are stubbed in the browser and Razorpay is replaced by a stub page, so it is safe to point at the live URL. Setup and usage are at the top of the file. Not deployed. |
 | `assets/` | Images (WebP): characters, course tiles, step icons, detail icons (`assets/icons/`), logos. |
 | `vercel.json` | Region `bom1` (Mumbai, next to the database), security headers, `noindex` on `/admin` and `/api`. |
 
@@ -55,11 +56,18 @@ The builder writes **one lead per visit** and updates it as the visitor moves th
 | `curated` | A domain is picked and the curated box is shown | Saw their box |
 | `pay` | The pay button is pressed (the visitor goes to Razorpay) | Pressed pay |
 
-Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `box` (the exact courses: `essential`, `mastery`, `short[]`, `ai[]`, `free[]`, `bigger[]`), `device`, `source` (UTM / query string).
+Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `box` (the exact courses: `essential`, `mastery`, `short[]`, `ai[]`, `free[]`, `bigger[]`), `device`, `source` (UTM / query string), `site` (which copy of the site sent it, e.g. `www.upgrad.com` or `samriddhi-gift-draft.vercel.app`, shown under the device in `/admin` and as the last CSV column).
+
+**Hosting a copy elsewhere (e.g. upgrad.com/your-diwali-gift/):** the site is plain static files and works under any sub-path; every path is relative. A static host has no `/api` of its own, so leads always go to the Vercel API at `https://samriddhi-gift-draft.vercel.app/api/lead` (`LEAD_API` in `app.js`; same-origin `/api/lead` on Vercel and localhost). They are sent as a `text/plain` body so the cross-site POST needs no CORS preflight, and `api/lead.js` allows any origin. If you build your own lead API, point `LEAD_API` at it.
 
 **Courses in `/admin` and the CSV:** the "Courses in the box" column and the CSV `courses` column list every course the visitor ended up with, comma-separated, in box order. Institutions are in brackets (e.g. "MBA (Golden Gate University)"), so no course name contains a comma and the list splits cleanly. Leads from before 2 Nov 2026 have no courses.
 
-**Consent:** the details pop-up has a required, unticked-by-default checkbox (agree to upGrad's Privacy Policy and Terms of Use, and consent to be contacted by phone, email, SMS and WhatsApp). The visitor can't continue without it, and `api/lead.js` rejects any lead without `consent: true`. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet. The footer carries the legal disclaimer. The Privacy Policy link goes to https://www.upgrad.com/privacy/, and Terms of Use and T&C go to https://www.upgrad.com/terms/.
+**Consent:** the details pop-up has a required, unticked-by-default checkbox with the sentence from the legal review, word for word: "By ticking this box, you agree to our Privacy Policy and Terms & Conditions." Privacy Policy links to https://www.upgrad.com/privacy/ and Terms & Conditions to https://www.upgrad.com/terms/. The visitor can't continue without the tick, and `api/lead.js` rejects any lead without `consent: true`. Pay checks again: if the details pop-up was closed with ✕ instead of saved (box unticked, details changed, or "Me" switched to "Someone I love"), Pay reopens the pop-up instead of going to Razorpay. Reopening the builder skips ahead to the courses only after details have been saved once. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet.
+
+**Footer disclaimer:** verbatim from the legal review, with three different links:
+- Terms of Use → the AI Badhaai Box Terms PDF on Google Drive: https://drive.google.com/file/d/1BpS9vXK8kdrQiZYXYwnjXjs0ZPyuqP_h/view?usp=sharing
+- T&C → https://www.upgrad.com/terms/
+- Privacy Policy → https://www.upgrad.com/privacy/
 
 Validation happens in the browser and again on the server (10-digit Indian mobile, valid email, length limits). Writes are rate-limited to 30 a minute per IP.
 

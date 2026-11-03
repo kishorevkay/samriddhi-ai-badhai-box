@@ -203,6 +203,9 @@
   });
 
   var PAY_URL = "https://pages.razorpay.com/pl_TtbakCLHtirsSY/view"; // Kish, 2026-10-29
+  // leads always go to the Vercel API, also from copies hosted elsewhere (upgrad.com/your-diwali-gift is a static copy with no /api of
+  // its own). A text/plain body keeps the cross-site POST a "simple" request with no CORS preflight; api/lead.js parses it as JSON.
+  var LEAD_API = /^(localhost|127\.0\.0\.1)$|\.vercel\.app$/.test(location.hostname) ? "/api/lead" : "https://samriddhi-gift-draft.vercel.app/api/lead";
 
   /* ---------- lead capture → /api/lead (Upstash, read in /admin). One row per visit, updated as the visitor moves on ---------- */
   var leadId = "";
@@ -217,7 +220,7 @@
       consent: $("#consent").checked, consentAt: consentAt,
       box: boxForLead(),
       source: (function(){ var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(k){ u.delete(k); }); return u.toString().slice(0, 160); })() };
-    try { fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) {}
+    try { fetch(LEAD_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) {}
   }
   /* ---------- builder navigation ---------- */
   var builder = $("#builder"), state = { mode: null, domain: null, screen: "who" };
@@ -244,7 +247,7 @@
     returnFocus = document.activeElement;
     behind.forEach(function(el){ el.inert = true; });
     builder.hidden = false; builder.classList.remove("enter"); void builder.offsetWidth; builder.classList.add("enter"); document.body.classList.add("lock");
-    go(state.mode && $("#g-name").value.trim() ? "domain" : "who");
+    go(state.mode && leadId ? "domain" : "who"); // skip ahead only once their details + consent tick have been saved
     startBuilderBg();
   }
   function close(){
@@ -267,7 +270,7 @@
   }
 
   /* step 1 · who */
-  document.querySelectorAll(".who").forEach(function(c){ tilt(c); c.addEventListener("click", function(){ state.mode = c.dataset.mode; burst(c, 8); later(function(){ openDetails(c); }, 180); }); });
+  document.querySelectorAll(".who").forEach(function(c){ tilt(c); c.addEventListener("click", function(){ if (state.mode !== c.dataset.mode) detailsSaved = false; state.mode = c.dataset.mode; burst(c, 8); later(function(){ openDetails(c); }, 180); }); });
 
   /* ---------- details pop-up: right after the who-pick. "Me" = your details; "Someone you love" = theirs + yours ----------
      Continue validates, saves and moves on to the domains; checkout later shows them as a summary with "Edit details". */
@@ -288,16 +291,18 @@
   }
   function closeDetails(){ dpop.hidden = true; if (dReturn && dReturn.focus) dReturn.focus({ preventScroll: true }); }
   dpop.querySelectorAll("[data-dclose]").forEach(function(b){ b.addEventListener("click", closeDetails); });
-  dform.addEventListener("input", function(e){ e.target.classList.remove("bad"); });
+  // detailsSaved: the pop-up was last closed by a valid Continue / Save with the box ticked; any edit after that clears it, and Pay needs it
+  var detailsSaved = false;
+  dform.addEventListener("input", function(e){ e.target.classList.remove("bad"); detailsSaved = false; });
   // consent: unticked by default, required to continue; the time it was ticked goes with the lead
   var consentAt = "";
   $("#consent").checked = false; // browsers restore a ticked box on reload / back; it must start unticked
-  $("#consent").addEventListener("change", function(e){ consentAt = e.target.checked ? new Date().toISOString() : ""; e.target.closest(".consent").classList.remove("bad"); });
+  $("#consent").addEventListener("change", function(e){ consentAt = e.target.checked ? new Date().toISOString() : ""; e.target.closest(".consent").classList.remove("bad"); detailsSaved = false; });
   dform.addEventListener("submit", function(e){ e.preventDefault();
-    var ok = ["r-name", "r-phone", "r-email", "g-name", "g-phone", "g-email"].map(valid).every(Boolean), hint = $("#dpopHint");
+    var ok = detailsOk(), hint = $("#dpopHint");
     if (!ok){ hint.textContent = "Check the highlighted details."; hint.classList.add("err"); var bad = dform.querySelector(".bad"); if (bad) bad.focus(); return; }
     if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; hint.classList.add("err"); $("#consent").focus(); return; }
-    dpop.hidden = true;
+    dpop.hidden = true; detailsSaved = true;
     if (!leadId) leadId = newLeadId();
     sendLead(state.domain ? "curated" : "details");
     $("#domTitle").textContent = state.mode === "other" ? "What would they like to learn?" : "What would you like to learn?";
@@ -453,7 +458,7 @@
     $("#rvLine").textContent = d.line;
     $("#rvEdition").textContent = d.edition;
     $("#rvGroups").innerHTML = boxGroups(d).map(groupHTML).join("") + '<p class="rv-note">' + esc(BOX.note) + '</p>';
-    $("#toCheckout").textContent = other ? "Send their AI Badhai Box for ₹249" : "Get my AI Badhai Box for ₹249";
+    $("#toCheckout").textContent = other ? "Send their AI Badhaai Box for ₹249" : "Get my AI Badhaai Box for ₹249";
     go("reveal");
     // plain timers (not later()): leaving the screen early must not leave cards hidden
     document.querySelectorAll("#rvGroups .group").forEach(function(el, i){ setTimeout(function(){ el.classList.add("in"); }, reduce ? 0 : 120 + i * 140); });
@@ -464,7 +469,7 @@
   function setCheckout(other, root){
     var q = function(id){ return (root || document).querySelector("#" + id + (root ? "-self" : "")); };
     q("coTitle").textContent = other ? "Give them something for the next career question." : "Ready for a better answer next time?";
-    q("coSub").innerHTML = other ? "Their AI Badhai Box is ready.<br>Send it for ₹249." : "Your AI Badhai Box is ready.<br>Unlock it for ₹249.";
+    q("coSub").innerHTML = other ? "Their AI Badhaai Box is ready.<br>Send it for ₹249." : "Your AI Badhaai Box is ready.<br>Unlock it for ₹249.";
     q("sumDomain").textContent = state.domain.name;
     q("sumFor").textContent = other ? "Someone I love" : "Me";
     var row = function(k, v){ return '<div class="sum-row"><span class="sum-k">' + k + '</span><span class="sum-v">' + esc(v) + '</span></div>'; };
@@ -472,7 +477,7 @@
     if (other) people += row("Sending to", [val("r-name"), val("r-phone"), val("r-email")].filter(Boolean).join(" · "));
     people += row(other ? "From" : "Your details", [val("g-name"), val("g-phone"), val("g-email")].filter(Boolean).join(" · "));
     q("sumPeople").innerHTML = people;
-    q("payBtn").textContent = other ? "Send their AI Badhai Box for ₹249" : "Get my AI Badhai Box for ₹249";
+    q("payBtn").textContent = other ? "Send their AI Badhaai Box for ₹249" : "Get my AI Badhaai Box for ₹249";
   }
   function showCheckout(){
     setCheckout(state.mode === "other");
@@ -484,21 +489,30 @@
   $("#editDetails").addEventListener("click", function(e){ openDetails(e.currentTarget, "checkout"); });
   function valid(id){ var el = $("#" + id); if (!el || el.closest("[hidden]")) return true; var v = el.value.trim(), ok = !!v;
     if (ok && el.inputMode === "numeric") ok = /^[6-9]\d{9}$/.test(v); if (ok && el.type === "email") ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); el.classList.toggle("bad", !ok); return ok; }
+  function detailsOk(){ return ["r-name", "r-phone", "r-email", "g-name", "g-phone", "g-email"].map(valid).every(Boolean); }
   $("#form").addEventListener("submit", function(e){ e.preventDefault();
+    // pay only after the details pop-up was saved with the consent tick; if it was closed with ✕ instead (box unticked, details edited, who changed), it opens again
+    if (!leadId || !detailsSaved || !$("#consent").checked){
+      openDetails(e.submitter || $("#editDetails"), "checkout");
+      var hint = $("#dpopHint");
+      if (!detailsOk()){ hint.textContent = "Check the highlighted details."; hint.classList.add("err"); var bad = dform.querySelector(".bad"); if (bad) bad.focus(); }
+      else if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; hint.classList.add("err"); $("#consent").focus(); }
+      return;
+    }
     sendLead("pay");
-    location.href = PAY_URL; // details were checked in the pop-up; payment happens on Razorpay's page
+    location.href = PAY_URL; // payment happens on Razorpay's page
   });
   // after-payment screen, kept for when Razorpay redirects back (not wired yet)
   function showDone(){
     var other = state.mode === "other";
-    $("#doneH").textContent = other ? "Their AI Badhai Box is ready. ✨" : "Your AI Badhai Box is ready. ✨";
+    $("#doneH").textContent = other ? "Their AI Badhaai Box is ready. ✨" : "Your AI Badhaai Box is ready. ✨";
     $("#doneP").textContent = "";
     fill(doneBox, domainCards(state.domain.id)); doneBox.classList.add("open"); doneBox.classList.remove("tied");
     go("done");
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; picksByDomain = {}; dform.reset(); go("who"); });
+  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; picksByDomain = {}; dform.reset(); go("who"); });
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */
@@ -582,7 +596,7 @@
     self.querySelectorAll("[id]").forEach(function(el){ el.id = el.id + "-self"; });
     co.after(self); setCheckout(false, self);
     // success
-    $("#doneH").textContent = "Their AI Badhai Box is ready. ✨";
+    $("#doneH").textContent = "Their AI Badhaai Box is ready. ✨";
     $("#doneP").textContent = "Draft: no payment was taken.";
     fill(doneBox, domainCards("mkt")); doneBox.classList.remove("open"); doneBox.classList.add("tied");
     // a label above each screen

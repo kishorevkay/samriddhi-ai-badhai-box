@@ -430,7 +430,7 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
 .v3-arch { position: absolute; left: 50%; top: 34px; transform: translateX(-50%); width: 440px; height: 640px; z-index: 1; text-align: center;
   background: var(--v3-cream); border: 4px solid var(--v3-ink); border-radius: 220px 220px 0 0 / 260px 260px 0 0; border-bottom: 0;
   box-shadow: 0 0 0 12px var(--v3-cream), 0 0 0 15px rgba(217,168,74,.75); padding-top: 150px; }
-.v3-title { font: 800 104px/.92 var(--serif); color: var(--v3-ink); margin: 0; letter-spacing: -.01em; }
+.v3-title { font: 800 89px/.92 var(--serif); /* every size here is ×0.854 of the "BADHAI" sizes, so 7-letter BADHAAI spans the same width */ color: var(--v3-ink); margin: 0; letter-spacing: -.01em; }
 .v3-tag { font: 500 22px/1.35 var(--body); color: #A13A40; margin: 22px 0 0; }
 .char { position: absolute; bottom: 12px; z-index: 3; width: 410px; }
 .char.aunty { left: 0; } .char.uncle { right: 0; }
@@ -486,7 +486,7 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
 .cs-card img { width: 86px; height: 86px; margin-top: 6px; }
 .cs-card span { writing-mode: vertical-rl; font: 400 19px/1 var(--display); letter-spacing: .06em; color: #9A1B2B; margin-top: 4px; }
 @media (prefers-reduced-motion: reduce) { .cs-track { animation: none; } }
-@media (max-width: 1100px) { .char { width: 36%; } .v3-arch { width: 380px; height: 580px; padding-top: 130px; } .v3-title { font-size: 88px; } }
+@media (max-width: 1100px) { .char { width: 36%; } .v3-arch { width: 380px; height: 580px; padding-top: 130px; } .v3-title { font-size: 75px; } }
 @media (max-width: 640px) {
   .v3-hero { padding-top: 12px; }
   .v3-nav { width: calc(100% - 24px); padding: 8px 14px; border-radius: 12px; }
@@ -494,7 +494,7 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
   .v3-strings { top: 60px; width: 46px; height: 150px; } .v3-strings.left { left: 1%; } .v3-strings.right { right: 1%; }
   .v3-stage { height: 168vw; }
   .v3-arch { top: 22px; width: 74vw; height: 120vw; padding-top: 18vw; border-radius: 37vw 37vw 0 0 / 44vw 44vw 0 0; box-shadow: 0 0 0 8px var(--v3-cream), 0 0 0 10px rgba(217,168,74,.75); }
-  .v3-title { font-size: 17vw; } .v3-tag { font-size: 4.4vw; margin-top: 3vw; }
+  .v3-title { font-size: 14.5vw; } .v3-tag { font-size: 4.4vw; margin-top: 3vw; }
   .char { width: 50vw; bottom: 10px; } .char.aunty { left: -3vw; } .char.uncle { right: -3vw; }
   .c-bubble { font-size: 5.4vw; padding: 3.4vw 4vw; min-width: 0; top: -9vw; border-width: 2px; white-space: nowrap; }
   .aunty .c-bubble { left: 8vw; } .uncle .c-bubble { right: 8vw; }
@@ -577,7 +577,7 @@ html.lenis, html.lenis body { height: auto; }
   .v3-stage { height: calc(185 * var(--u)); }
   .v3-arch { top: calc(14 * var(--u)); width: calc(76 * var(--u)); height: calc(120 * var(--u)); padding-top: calc(13 * var(--u));
     border-radius: calc(38 * var(--u)) calc(38 * var(--u)) 0 0 / calc(44 * var(--u)) calc(44 * var(--u)) 0 0; }
-  .v3-title { font-size: calc(16 * var(--u)); }
+  .v3-title { font-size: calc(13.7 * var(--u)); }
   .v3-tag { font-size: calc(4.4 * var(--u)); margin-top: calc(3 * var(--u)); }
   .char { width: calc(56 * var(--u)); bottom: 0; }
   .char.aunty { left: calc(50% - 56 * var(--u)); } .char.uncle { right: calc(50% - 56 * var(--u)); left: auto; }
@@ -619,6 +619,7 @@ html.lenis, html.lenis body { height: auto; }
 @media (max-width: 640px) { .dpop { padding: 10px; align-items: end; } .dpop-card { border-radius: 22px 22px 16px 16px; } .dpop-title { font-size: 22px; } }
 /* form buttons match the v3 page CTAs (maroon, gold edge, serif) */
 .pay { background: var(--v3-red); border: 2px solid var(--v3-gold); font: 500 19px/1 var(--serif-b); color: var(--v3-cream); padding: 17px; box-shadow: 0 10px 24px rgba(80,0,20,.25); }
+@media (max-width: 640px) { .pay { font-size: min(19px, 4.4vw); padding: 17px 12px; } } /* "Send their AI Badhaai Box for ₹249" stays on one line on phones */
 .pay:hover { background: var(--v3-red2); }
 /* reveal heading: exactly two lines, "Congratulations … Box." then "There's a lot packed inside." */
 .rv-loaded-h { max-width: none; font-size: clamp(1.15rem, 2.9vw, 2.3rem); }
@@ -626,16 +627,18 @@ html.lenis, html.lenis body { height: auto; }
 @media (max-width: 640px) { .rv-loaded-h { font-size: clamp(.95rem, 4.9vw, 1.3rem); } }
 @media (max-width: 640px) { .rv-loaded-h { font-size: 3.6vw; letter-spacing: -.01em; } }
 /* "Who's it for" cards: illustration across the top on warm cream */
-.who .who-img { display: flex; justify-content: center; align-items: flex-end; height: 210px; margin: -30px -28px 14px; padding-top: 16px; background: radial-gradient(70% 90% at 50% 100%, #F6E3C0 0%, #FEF6E8 60%, #FFFBF3 100%); }
-.who .who-img img { height: 100%; width: auto; max-width: 100%; object-fit: contain; display: block; }
-@media (max-width: 640px) { .who .who-img { height: 150px; margin: -22px -20px 10px; } }
+/* who cards: a centred paper-cut icon like the "How it works" steps (Kish 2026-11-03: icons instead of the characters) */
+.who { align-items: center; text-align: center; }
+.who .who-ic { display: block; width: 180px; height: 180px; margin: 2px auto 4px; }
+.who .who-ic img { width: 100%; height: 100%; display: block; }
+@media (max-width: 640px) { .who .who-ic { width: 120px; height: 120px; margin: 0 auto; } }
 
 /* consent tick in the details pop-up + legal small print in the footer (2026-11-02) */
 .consent { display: flex; align-items: flex-start; gap: 10px; margin: 2px 0 6px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; }
 .consent.bad { border-color: var(--red); background: #FFF5F5; }
 .consent input { flex: none; width: 20px; height: 20px; min-width: 0; margin: 1px 0 0; padding: 0; accent-color: var(--v3-red); cursor: pointer; }
 .consent label { display: block; font: 400 13px/1.5 var(--body); letter-spacing: 0; text-transform: none; color: var(--ink-soft); cursor: pointer; }
-.consent a { color: var(--v3-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.consent a { color: var(--v3-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; } /* "Terms & Conditions" never splits across lines */
 .legal { max-width: 860px; margin: 34px auto 0; padding-top: 22px; border-top: 1px solid rgba(248,239,223,.16); font: 400 12px/1.6 var(--body); color: rgba(248,239,223,.62); text-align: center; }
 .legal a { color: rgba(246,231,200,.9); text-decoration: underline; text-underline-offset: 2px; }
 .legal a:hover { color: var(--gold-hi); }
@@ -674,7 +677,7 @@ html.lenis, html.lenis body { height: auto; }
 .spop-go { grid-column: 2; grid-row: 1 / span 2; font: 700 12px var(--body); color: var(--v3-ink); white-space: nowrap; }
 @media (max-width: 640px) { .spop-go { display: none; } }
 /* How it works copy (2 Nov changes): balanced lines, no one-word last line */
-.v3-steps h3, .v3-steps p, .dom .tp { text-wrap: balance; }
+.v3-steps h3, .v3-steps p, .dom .tp, .who .tp { text-wrap: balance; }
 /* curation tornado (bgfx/tornado.js): a transparent canvas in the box's place */
 .cur-tornado { width: calc(100% + 140px); margin: 0 -70px; height: min(680px, 76vh); position: relative; }
 .cur-tornado canvas { display: block; width: 100%; height: 100%; }
