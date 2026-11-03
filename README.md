@@ -19,6 +19,7 @@ Plain static site + two serverless functions. No framework, no build step, no np
 | `data.js` | **All campaign copy and the course catalogue**: `BOX` (common courses, how many are drawn per section, offer badges, hours / eligibility / mode) and `DOMAINS` (each domain's mastery track and its short, free and flagship pools), plus curation lines and carousel tiles. Edit courses here. |
 | `device.js` | Desktop "📱 Mobile view" toggle for reviewers (phone-frame preview of the same page). |
 | `bgfx/v2.js`, `bgfx/v6.js` | Reactive canvas backgrounds (floating embers, click-glow rangoli). |
+| `bgfx/tornado.js` + `vendor/three.module.min.js` + `assets/tornado/` | The curation screen ("Curating your AI Badhai Box…"): course cards whirl up in a golden tornado and pour into the box, the lid shuts as "…is ready" appears, gold dust bursts out. three.js (r160, vendored), loaded in the background when the builder opens. Falls back to the CSS gift box without WebGL or with "reduce motion". |
 | `bgfx/fireworks.js` | Soft background fireworks in the hero and the footer. Colours come from the page's colour tokens; pauses off-screen; off with "reduce motion". |
 | `admin.html` | Leads dashboard at `/admin`. |
 | `api/lead.js` | `POST /api/lead`: saves and updates a lead. |

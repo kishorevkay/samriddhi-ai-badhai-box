@@ -675,3 +675,7 @@ html.lenis, html.lenis body { height: auto; }
 @media (max-width: 640px) { .spop-go { display: none; } }
 /* How it works copy (2 Nov changes): balanced lines, no one-word last line */
 .v3-steps h3, .v3-steps p, .dom .tp { text-wrap: balance; }
+/* curation tornado (bgfx/tornado.js): a transparent canvas in the box's place */
+.cur-tornado { width: calc(100% + 140px); margin: 0 -70px; height: min(680px, 76vh); position: relative; }
+.cur-tornado canvas { display: block; width: 100%; height: 100%; }
+@media (max-width: 640px) { .cur-tornado { width: min(360px, 92vw); height: min(270px, 32svh); margin: 22px 0 0; } }

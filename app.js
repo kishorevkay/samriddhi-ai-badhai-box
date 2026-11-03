@@ -231,6 +231,7 @@
   builder.querySelectorAll(".screen h2").forEach(function(h){ h.tabIndex = -1; });
   function go(name){
     clearFlow();
+    if (name !== "curate" && tornado) tornado.stop();
     state.screen = name;
     builder.querySelectorAll(".screen").forEach(function(s){ var on = s.dataset.screen === name; s.hidden = !on; if (on){ s.classList.remove("enter"); void s.offsetWidth; s.classList.add("enter"); } });
     builder.querySelectorAll(".b-dots i").forEach(function(d, i){ d.classList.toggle("on", i < DOT[name]); });
@@ -315,21 +316,40 @@
   /* ---------- curation: lines tick in while gifts drop into the box ---------- */
   function startCuration(){
     go("curate");
-    var lines = CURATION[state.mode], ol = $("#curLines"), cols = [];
+    var lines = CURATION[state.mode], ol = $("#curLines"), cols = [], tw = !!(tornado && tornadoReady);
+    // the golden tornado (bgfx/tornado.js) when it has loaded, otherwise the CSS gift box that fills card by card
+    curBox.hidden = tw; $("#curTornado").hidden = !tw;
     ol.innerHTML = ""; curBox.classList.add("open"); curBox.classList.remove("tied"); fill(curBox, []);
-    var step = reduce ? 120 : 760, t = 300;
+    if (tw) tornado.play();
+    // with the tornado, the last line ("…is ready") lands as the lid shuts, and the reveal waits for the gold dust
+    var step = reduce ? 120 : tw ? Math.round((TORNADO_CLOSE * 1000 - 300) / (lines.length - 1)) : 760, t = 300;
     lines.forEach(function(L, i){
       var text = L[0].replace("{d}", state.domain.name), drop = L[1], last = i === lines.length - 1;
       later(function(){
         ol.querySelectorAll("li").forEach(function(x){ x.classList.remove("now"); });
         var li = document.createElement("li"); li.textContent = text; if (last) li.className = "final"; ol.appendChild(li);
         requestAnimationFrame(function(){ li.classList.add("in", "now"); });
+        if (tw) return;
         if (drop && drop !== "done"){ cols = cols.concat(DOMAIN_CARDS[state.domain.id][drop] || []); fill(curBox, cols); bump(curBox); }
         if (drop === "done"){ later(function(){ curBox.classList.remove("open"); }, 200); later(function(){ curBox.classList.add("tied"); bump(curBox); burst(curBox, 12); }, 750); }
       }, t);
       t += last ? 0 : step;
     });
-    later(showReveal, t + (reduce ? 300 : 1900));
+    later(showReveal, t + (reduce ? 300 : tw ? (TORNADO_DUR - TORNADO_CLOSE) * 1000 + 700 : 1900));
+  }
+
+  /* ---------- curation tornado (three.js), loaded in the background the first time the builder opens ----------
+     Skipped with reduced motion or without WebGL; the CSS box above is the fallback. */
+  var tornado = null, tornadoReady = false, TORNADO_DUR = 6.5, TORNADO_CLOSE = 5.42;
+  function loadTornado(){
+    if (tornado || reduce) return;
+    try { var c = document.createElement("canvas"); if (!(c.getContext("webgl2") || c.getContext("webgl"))) return; } catch (e){ return; }
+    tornado = {};   // loading
+    import("./bgfx/tornado.js").then(function(m){
+      TORNADO_DUR = m.DUR; TORNADO_CLOSE = m.CLOSE;
+      tornado = m.create($("#curTornado"));
+      return tornado.ready.then(function(){ tornadoReady = true; });
+    }).catch(function(e){ console.error(e); tornado = null; tornadoReady = false; });
   }
 
   /* ---------- scrolls 5 + 6 · reveal: the curated box, exactly as the copy lists it for this domain ---------- */
@@ -494,7 +514,7 @@
   /* ---------- builder background: small living rangoli (bgfx v6), started the first time the builder opens ----------
      The screens cover most of it, so pointer events on the builder are forwarded to the layer to keep it reacting everywhere. */
   var bbg = $("#builderBg"), bbgOn = false;
-  function startBuilderBg(){ if (bbgOn || !window.BGFX || !BGFX.v6) return; bbgOn = true; try { bbg.dataset.fxStrings = "off"; BGFX.v6.init(bbg); } catch (e){ console.error(e); } }
+  function startBuilderBg(){ loadTornado(); if (bbgOn || !window.BGFX || !BGFX.v6) return; bbgOn = true; try { bbg.dataset.fxStrings = "off"; BGFX.v6.init(bbg); } catch (e){ console.error(e); } }
   ["pointermove", "pointerdown", "pointerleave"].forEach(function(type){
     builder.addEventListener(type, function(e){ if (e.target === bbg) return; bbg.dispatchEvent(new PointerEvent(type, { clientX: e.clientX, clientY: e.clientY, pointerId: e.pointerId, pointerType: e.pointerType, isPrimary: e.isPrimary })); }, { passive: true });
   });
