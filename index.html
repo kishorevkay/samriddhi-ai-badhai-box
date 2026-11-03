@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Yatra+One&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261103">
+<link rel="stylesheet" href="styles.css?v=20261103.2">
 </head>
 <body>
 
@@ -146,11 +146,6 @@
         <p class="rv-curated" id="rvCurated">Curated for Marketing &amp; AI.</p>
         <p class="rv-line" id="rvLine"></p>
       </div>
-      <div class="edition" aria-label="Your edition">
-        <span class="ed-brand">AI Badhaai Box by upGrad</span>
-        <span class="ed-name" id="rvEdition">MARKETING &amp; AI EDITION</span>
-        <span class="ed-price">₹249</span>
-      </div>
     </div>
     <p class="step-tag light rv-inside">What’s inside</p>
     <div class="rv-groups" id="rvGroups"></div>
@@ -163,6 +158,14 @@
         <button class="c-arrow next" aria-label="Next">→</button>
       </div>
       <div class="c-dots" aria-hidden="true"></div>
+    </div>
+    <!-- the price card comes after what's inside, not up top (Manik, 3 Nov) -->
+    <div class="rv-edition">
+      <div class="edition" aria-label="Your edition">
+        <span class="ed-brand">AI Badhaai Box by upGrad</span>
+        <span class="ed-name" id="rvEdition">MARKETING &amp; AI EDITION</span>
+        <span class="ed-price">₹249</span>
+      </div>
     </div>
     <div class="rv-cta">
       <button class="cta cream-cta" id="toCheckout">Get my AI Badhaai Box for ₹249</button>
@@ -200,7 +203,7 @@
           <label>Their mobile number<input id="r-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile"></label>
         </div>
         <label>Their email<input id="r-email" type="email" autocomplete="off" placeholder="their@email.com"></label>
-        <label>Add a Diwali note<textarea id="note" rows="3">Happy Diwali! Here’s something for the next time someone asks, “So, what’s next?” ✨</textarea></label>
+        <label>Add a Diwali note<textarea id="note" rows="3" maxlength="400">Happy Diwali! Here’s something for the next time someone asks, “So, what’s next?” ✨</textarea></label>
       </fieldset>
       <fieldset id="selfFields">
         <legend id="selfLegend">Your details</legend>
@@ -244,11 +247,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
 <!-- ?v= makes copies on hosts without cache headers (upgrad.com) load fresh code: bump it whenever these files change -->
-<script src="device.js?v=20261103"></script>
-<script src="data.js?v=20261103"></script>
-<script src="bgfx/v2.js?v=20261103"></script>
-<script src="bgfx/v6.js?v=20261103"></script>
-<script src="bgfx/fireworks.js?v=20261103"></script>
-<script src="app.js?v=20261103"></script>
+<script src="device.js?v=20261103.2"></script>
+<script src="data.js?v=20261103.2"></script>
+<script src="bgfx/v2.js?v=20261103.2"></script>
+<script src="bgfx/v6.js?v=20261103.2"></script>
+<script src="bgfx/fireworks.js?v=20261103.2"></script>
+<script src="app.js?v=20261103.2"></script>
 </body>
 </html>

@@ -2,6 +2,13 @@
 // Local development only — _lib.js refuses to fall back to it on Vercel.
 
 const store = new Map();
+const timers = new Map();
+function expire(key, seconds) {
+  clearTimeout(timers.get(key));
+  const t = setTimeout(() => { store.delete(key); timers.delete(key); }, seconds * 1000);
+  t.unref?.();
+  timers.set(key, t);
+}
 
 const hash = (k) => {
   if (!store.has(k)) store.set(k, new Map());
@@ -11,14 +18,20 @@ const hash = (k) => {
 function run([name, key, ...a]) {
   switch (String(name).toUpperCase()) {
     case "GET": return store.has(key) ? store.get(key) : null;
-    case "SET": store.set(key, String(a[0])); return "OK";
+    case "SET": {
+      const opts = a.slice(1).map((o) => String(o).toUpperCase());
+      if (opts.includes("NX") && store.has(key)) return null;
+      store.set(key, String(a[0]));
+      if (opts.includes("EX")) expire(key, Number(a[1 + opts.indexOf("EX") + 1]));
+      return "OK";
+    }
     case "DEL": return store.delete(key) ? 1 : 0;
     case "INCR": {
       const v = Number(store.get(key) || 0) + 1;
       store.set(key, String(v));
       return v;
     }
-    case "EXPIRE": return 1;
+    case "EXPIRE": if (!store.has(key)) return 0; expire(key, Number(a[0])); return 1;
     case "HSET": {
       const h = hash(key);
       for (let i = 0; i < a.length; i += 2) h.set(String(a[i]), String(a[i + 1]));

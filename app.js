@@ -208,19 +208,24 @@
   var LEAD_API = /^(localhost|127\.0\.0\.1)$|\.vercel\.app$/.test(location.hostname) ? "/api/lead" : "https://samriddhi-gift-draft.vercel.app/api/lead";
 
   /* ---------- lead capture → /api/lead (Upstash, read in /admin). One row per visit, updated as the visitor moves on ---------- */
-  var leadId = "";
+  var leadId = "", savedDetails = null; // savedDetails: what the visitor last confirmed in the pop-up (box ticked); only this ever leaves the browser
   function newLeadId(){ return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)); }
-  function sendLead(stage){
-    if (!leadId || location.protocol === "file:") return;
+  function snapshotDetails(){
     var v = function(id){ var el = document.getElementById(id); return el ? el.value.trim() : ""; };
     var other = state.mode === "other";
-    var body = { id: leadId, stage: stage, mode: state.mode, domain: state.domain ? state.domain.name : "",
+    return { mode: state.mode, consentAt: consentAt,
       buyer: { name: v("g-name"), phone: v("g-phone"), email: v("g-email") },
-      recipient: other ? { name: v("r-name"), phone: v("r-phone"), email: v("r-email"), note: v("note") } : null,
-      consent: $("#consent").checked, consentAt: consentAt,
+      recipient: other ? { name: v("r-name"), phone: v("r-phone"), email: v("r-email"), note: v("note") } : null };
+  }
+  // details come from the last save, never from fields the visitor edited and then closed with ✕; domain and box are always current
+  function sendLead(stage){
+    if (!leadId || !savedDetails || location.protocol === "file:") return Promise.resolve();
+    var d = savedDetails;
+    var body = { id: leadId, stage: stage, mode: d.mode, domain: state.domain ? state.domain.name : "",
+      buyer: d.buyer, recipient: d.recipient, consent: true, consentAt: d.consentAt,
       box: boxForLead(),
       source: (function(){ var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(k){ u.delete(k); }); return u.toString().slice(0, 160); })() };
-    try { fetch(LEAD_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) {}
+    try { return fetch(LEAD_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) { return Promise.resolve(); }
   }
   /* ---------- builder navigation ---------- */
   var builder = $("#builder"), state = { mode: null, domain: null, screen: "who" };
@@ -232,10 +237,15 @@
   function clearFlow(){ flowTimers.forEach(clearTimeout); flowTimers = []; }
   var behind = Array.prototype.slice.call(document.querySelectorAll("body > header, body > section, body > footer")), returnFocus = null;
   builder.querySelectorAll(".screen h2").forEach(function(h){ h.tabIndex = -1; });
+  // a double / triple tap must not carry over: its next tap would land on whatever just appeared under the finger (Save, the consent
+  // box, a learning-area card). So taps within 400 ms of a screen or the details pop-up appearing are ignored, and so are the 2nd / 3rd
+  // clicks of a multi-click (event.detail > 1) within 1 s; a slow triple-click lands its last click about 0.5 s in
+  var shownAt = 0;
+  builder.addEventListener("click", function(e){ var dt = performance.now() - shownAt; if (dt < 400 || (e.detail > 1 && dt < 1000)){ e.preventDefault(); e.stopPropagation(); } }, true);
   function go(name){
     clearFlow();
     if (name !== "curate" && tornado) tornado.stop();
-    state.screen = name;
+    state.screen = name; shownAt = performance.now();
     builder.querySelectorAll(".screen").forEach(function(s){ var on = s.dataset.screen === name; s.hidden = !on; if (on){ s.classList.remove("enter"); void s.offsetWidth; s.classList.add("enter"); } });
     builder.querySelectorAll(".b-dots i").forEach(function(d, i){ d.classList.toggle("on", i < DOT[name]); });
     $("#bBack").disabled = !BACK[name];
@@ -286,10 +296,12 @@
     $("#dpopHint").textContent = ""; $("#dpopHint").classList.remove("err");
     dform.querySelectorAll(".bad").forEach(function(x){ x.classList.remove("bad"); });
     if (!leadId){ $("#consent").checked = false; consentAt = ""; $("#consent").closest(".consent").classList.remove("bad"); } // unticked until they've continued once
-    dpop.hidden = false; dpop.classList.remove("enter"); void dpop.offsetWidth; dpop.classList.add("enter");
+    dpop.hidden = false; dpop.classList.remove("enter"); void dpop.offsetWidth; dpop.classList.add("enter"); shownAt = performance.now(); behindPop(true);
     var first = dform.querySelector("fieldset:not([hidden]) input"); if (first) first.focus({ preventScroll: true });
   }
-  function closeDetails(){ dpop.hidden = true; if (dReturn && dReturn.focus) dReturn.focus({ preventScroll: true }); }
+  // while the pop-up is open, the builder behind it can't be tabbed to or clicked (Option+Tab could reach Pay)
+  function behindPop(on){ Array.prototype.forEach.call(builder.children, function(el){ if (el !== dpop) el.inert = on; }); }
+  function closeDetails(){ dpop.hidden = true; behindPop(false); if (dReturn && dReturn.focus) dReturn.focus({ preventScroll: true }); }
   dpop.querySelectorAll("[data-dclose]").forEach(function(b){ b.addEventListener("click", closeDetails); });
   // detailsSaved: the pop-up was last closed by a valid Continue / Save with the box ticked; any edit after that clears it, and Pay needs it
   var detailsSaved = false;
@@ -302,7 +314,7 @@
     var ok = detailsOk(), hint = $("#dpopHint");
     if (!ok){ hint.textContent = "Check the highlighted details."; hint.classList.add("err"); var bad = dform.querySelector(".bad"); if (bad) bad.focus(); return; }
     if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; hint.classList.add("err"); $("#consent").focus(); return; }
-    dpop.hidden = true; detailsSaved = true;
+    dpop.hidden = true; behindPop(false); detailsSaved = true; savedDetails = snapshotDetails();
     if (!leadId) leadId = newLeadId();
     sendLead(state.domain ? "curated" : "details");
     $("#domTitle").textContent = state.mode === "other" ? "What would they like to learn?" : "What would you like to learn?";
@@ -487,20 +499,22 @@
   $("#toCheckout").addEventListener("click", showCheckout);
   $("#changeSel").addEventListener("click", function(){ go("domain"); });
   $("#editDetails").addEventListener("click", function(e){ openDetails(e.currentTarget, "checkout"); });
-  function valid(id){ var el = $("#" + id); if (!el || el.closest("[hidden]")) return true; var v = el.value.trim(), ok = !!v;
-    if (ok && el.inputMode === "numeric") ok = /^[6-9]\d{9}$/.test(v); if (ok && el.type === "email") ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); el.classList.toggle("bad", !ok); return ok; }
+  // same rules as api/lead.js (it drops < > and control characters, and emails over 120 characters), so nothing accepted here is refused there
+  function valid(id){ var el = $("#" + id); if (!el || el.closest("[hidden]")) return true; var v = el.value.replace(/[\u0000-\u001f<>]/g, " ").trim(), ok = !!v;
+    if (ok && el.inputMode === "numeric") ok = /^[6-9]\d{9}$/.test(v); if (ok && el.type === "email") ok = v.length <= 120 && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(v); el.classList.toggle("bad", !ok); return ok; }
   function detailsOk(){ return ["r-name", "r-phone", "r-email", "g-name", "g-phone", "g-email"].map(valid).every(Boolean); }
   $("#form").addEventListener("submit", function(e){ e.preventDefault();
     // pay only after the details pop-up was saved with the consent tick; if it was closed with ✕ instead (box unticked, details edited, who changed), it opens again
     if (!leadId || !detailsSaved || !$("#consent").checked){
       openDetails(e.submitter || $("#editDetails"), "checkout");
-      var hint = $("#dpopHint");
-      if (!detailsOk()){ hint.textContent = "Check the highlighted details."; hint.classList.add("err"); var bad = dform.querySelector(".bad"); if (bad) bad.focus(); }
-      else if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; hint.classList.add("err"); $("#consent").focus(); }
+      var hint = $("#dpopHint"); hint.classList.add("err");
+      if (!detailsOk()){ hint.textContent = "Check the highlighted details."; var bad = dform.querySelector(".bad"); if (bad) bad.focus(); }
+      else if (!$("#consent").checked){ $("#consent").closest(".consent").classList.add("bad"); hint.textContent = "Please tick the box to agree and continue."; $("#consent").focus(); }
+      else hint.textContent = "Please save your details to continue.";
       return;
     }
-    sendLead("pay");
-    location.href = PAY_URL; // payment happens on Razorpay's page
+    // payment happens on Razorpay's page; give the "pay" save up to 0.6 s to leave first (keepalive alone was cut off in some WebKit runs)
+    Promise.race([sendLead("pay"), new Promise(function(r){ setTimeout(r, 600); })]).then(function(){ location.href = PAY_URL; });
   });
   // after-payment screen, kept for when Razorpay redirects back (not wired yet)
   function showDone(){
@@ -512,7 +526,7 @@
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; picksByDomain = {}; dform.reset(); go("who"); });
+  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; savedDetails = null; picksByDomain = {}; dform.reset(); go("who"); });
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */

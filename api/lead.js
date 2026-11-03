@@ -43,10 +43,11 @@ export default async function handler(req, res) {
   const consentAt = typeof b.consentAt === "string" && !isNaN(Date.parse(b.consentAt)) ? new Date(b.consentAt).toISOString() : "";
 
   try {
-    // light abuse guard: 30 writes a minute per IP
-    const ip = clientIp(req);
-    const [n] = await pipeline([["INCR", `${P}rl:${ip}`], ["EXPIRE", `${P}rl:${ip}`, 60]]);
-    if (n > 30) return res.status(429).json({ error: "too many requests" });
+    // light abuse guard: 120 writes per IP per fixed 60 s window. SET NX opens the window once; re-arming EXPIRE on every write
+    // (as before) kept the counter alive for as long as traffic kept coming, so a busy shared IP (office, mobile carrier NAT) was refused for good
+    const rl = `${P}rl:${clientIp(req)}`;
+    const [, n] = await pipeline([["SET", rl, 0, "EX", 60, "NX"], ["INCR", rl]]);
+    if (n > 120) return res.status(429).json({ error: "too many requests" });
 
     const [prevRaw] = await pipeline([["HGET", `${P}leads`, id]]);
     const prev = prevRaw ? safeJson(prevRaw) || {} : {};

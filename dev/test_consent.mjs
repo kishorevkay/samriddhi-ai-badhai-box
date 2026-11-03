@@ -9,6 +9,7 @@ import { chromium, webkit } from "playwright";
 const BASE = process.env.BASE || "http://localhost:5251/";
 const ENGINES = (process.env.ENGINES || "chromium,webkit").split(",");
 const ONLY = process.env.ONLY ? process.env.ONLY.split(",") : null;
+const SETTLE = 450; // the site ignores taps for 400 ms after a screen or the pop-up appears (double-tap guard), so wait like a person would
 
 async function fresh(browser, opts = {}) {
   const ctx = await browser.newContext({
@@ -37,23 +38,23 @@ async function fresh(browser, opts = {}) {
 const screen = page => page.evaluate(() => { const s = [...document.querySelectorAll("#builder .screen")].find(x => !x.hidden); return s ? s.dataset.screen : null; });
 const popOpen = page => page.evaluate(() => !document.querySelector("#dpop").hidden);
 const hasBad = (page, sel) => page.evaluate(s => document.querySelector(s).classList.contains("bad"), sel);
-async function openBuilder(page) { await page.locator("[data-open-builder]").first().click(); await page.waitForSelector("#builder:not([hidden])"); await page.waitForTimeout(250); }
+async function openBuilder(page) { await page.locator("[data-open-builder]").first().click(); await page.waitForSelector("#builder:not([hidden])"); await page.waitForTimeout(SETTLE); }
 async function closeBuilder(page) { await page.click("#bClose"); await page.waitForSelector("#builder", { state: "hidden" }); }
-async function pickWho(page, mode) { await page.locator(`.who[data-mode="${mode}"]`).click(); await page.waitForSelector("#dpop:not([hidden])"); await page.waitForTimeout(150); }
+async function pickWho(page, mode) { await page.locator(`.who[data-mode="${mode}"]`).click(); await page.waitForSelector("#dpop:not([hidden])"); await page.waitForTimeout(SETTLE); }
 async function fillSelf(page, email) { await page.fill("#g-name", "QA Test"); await page.fill("#g-phone", "9876543210"); await page.fill("#g-email", email || "qa@example.com"); }
 async function fillOther(page) { await page.fill("#r-name", "QA Friend"); await page.fill("#r-phone", "9876500000"); await page.fill("#r-email", "friend@example.com"); }
 async function tick(page, on = true) { if ((await page.isChecked("#consent")) !== on) await page.click("#consent"); }
 async function save(page) { await page.click("#dpopGo"); }
 async function closePop(page) { await page.click("#dpop .dpop-x"); await page.waitForSelector("#dpop", { state: "hidden" }); }
 async function domainToCheckout(page) {
-  await page.waitForSelector('#builder .screen[data-screen="domain"]:not([hidden])');
+  await page.waitForSelector('#builder .screen[data-screen="domain"]:not([hidden])'); await page.waitForTimeout(SETTLE);
   await page.locator("#domainGrid .dom").first().click();
   await page.waitForSelector('#builder .screen[data-screen="reveal"]:not([hidden])', { timeout: 40000 });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(SETTLE);
   await page.click("#toCheckout");
-  await page.waitForSelector('#builder .screen[data-screen="checkout"]:not([hidden])');
+  await page.waitForSelector('#builder .screen[data-screen="checkout"]:not([hidden])'); await page.waitForTimeout(SETTLE);
 }
-async function pressPay(page) { await page.click("#form [type=submit]"); await page.waitForTimeout(900); }
+async function pressPay(page) { await page.waitForTimeout(SETTLE); await page.click("#form [type=submit]"); await page.waitForTimeout(1200); }
 async function savedSelfToCheckout(t) { await openBuilder(t.page); await pickWho(t.page, "self"); await fillSelf(t.page); await tick(t.page); await save(t.page); await domainToCheckout(t.page); }
 
 const SCENARIOS = {
@@ -82,41 +83,93 @@ const SCENARIOS = {
   },
   "untick-at-checkout-blocks-pay": async t => {
     await savedSelfToCheckout(t);
-    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await tick(t.page, false); await closePop(t.page);
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await tick(t.page, false); await closePop(t.page);
     await pressPay(t.page);
     const blocked = t.pays.length === 0 && await popOpen(t.page), hint = (await t.page.textContent("#dpopHint")).trim(), bad = await hasBad(t.page, ".consent");
-    await tick(t.page); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" });
+    await t.page.waitForTimeout(SETTLE); await tick(t.page); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" });
     const sc = await screen(t.page); await pressPay(t.page);
     const last = t.leads.at(-1) || {};
     return { pass: blocked && /tick the box/i.test(hint) && bad && sc === "checkout" && t.pays.length === 1 && last.consent === true, detail: `blocked=${blocked}, hint="${hint}", box flagged=${bad}; after tick+save on "${sc}", pays=${t.pays.length}, consent=${last.consent}` };
   },
   "bad-email-at-checkout-blocks-pay": async t => {
     await savedSelfToCheckout(t);
-    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.fill("#g-email", "abc"); await closePop(t.page);
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await t.page.fill("#g-email", "abc"); await closePop(t.page);
     await pressPay(t.page);
     const blocked = t.pays.length === 0 && await popOpen(t.page), hint = (await t.page.textContent("#dpopHint")).trim(), bad = await hasBad(t.page, "#g-email");
-    await t.page.fill("#g-email", "new@example.com"); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" });
+    await t.page.waitForTimeout(SETTLE); await t.page.fill("#g-email", "new@example.com"); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" });
     await pressPay(t.page);
     const last = t.leads.at(-1) || {};
     return { pass: blocked && /highlighted/i.test(hint) && bad && t.pays.length === 1 && last.buyer && last.buyer.email === "new@example.com", detail: `blocked=${blocked}, hint="${hint}", email flagged=${bad}; after fix pays=${t.pays.length}, paid with email=${last.buyer && last.buyer.email}` };
   },
   "switch-to-someone-then-close-blocks-pay": async t => {
     await openBuilder(t.page); await pickWho(t.page, "self"); await fillSelf(t.page); await tick(t.page); await save(t.page);
-    await t.page.waitForSelector('#builder .screen[data-screen="domain"]:not([hidden])'); await t.page.click("#bBack");
-    await t.page.waitForSelector('#builder .screen[data-screen="who"]:not([hidden])');
+    await t.page.waitForSelector('#builder .screen[data-screen="domain"]:not([hidden])'); await t.page.waitForTimeout(SETTLE); await t.page.click("#bBack");
+    await t.page.waitForSelector('#builder .screen[data-screen="who"]:not([hidden])'); await t.page.waitForTimeout(SETTLE);
     await pickWho(t.page, "other"); await closePop(t.page); await closeBuilder(t.page); await openBuilder(t.page);
     const reopened = await screen(t.page);
     await domainToCheckout(t.page); await pressPay(t.page);
     const blocked = t.pays.length === 0 && await popOpen(t.page), hint = (await t.page.textContent("#dpopHint")).trim(), bad = await hasBad(t.page, "#r-name");
-    await fillOther(t.page); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" }); await pressPay(t.page);
+    await t.page.waitForTimeout(SETTLE); await fillOther(t.page); await save(t.page); await t.page.waitForSelector("#dpop", { state: "hidden" }); await pressPay(t.page);
     const last = t.leads.at(-1) || {};
     return { pass: reopened === "domain" && blocked && /highlighted/i.test(hint) && bad && t.pays.length === 1 && last.mode === "other" && last.recipient && last.recipient.name === "QA Friend", detail: `reopened on "${reopened}", blocked=${blocked}, hint="${hint}", their name flagged=${bad}; after filling pays=${t.pays.length}, mode=${last.mode}` };
   },
   "edit-without-changes-still-pays": async t => {
     await savedSelfToCheckout(t);
-    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.keyboard.press("Escape"); await t.page.waitForSelector("#dpop", { state: "hidden" });
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await t.page.keyboard.press("Escape"); await t.page.waitForSelector("#dpop", { state: "hidden" });
     await pressPay(t.page);
     return { pass: t.pays.length === 1, detail: `pays=${t.pays.length} (looking at details and closing them must not block Pay)` };
+  },
+  // a double-click on Pay after unticking: the 2nd click lands on the reopened pop-up (the consent box sat under Pay) and must not tick it
+  "double-click-pay-does-not-tick": async t => {
+    await savedSelfToCheckout(t);
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await tick(t.page, false); await closePop(t.page);
+    await t.page.dblclick("#form [type=submit]"); await t.page.waitForTimeout(800);
+    const ticked = await t.page.isChecked("#consent"), open = await popOpen(t.page);
+    return { pass: !ticked && open && t.pays.length === 0, detail: `consent ticked by the 2nd click=${ticked}, pop-up open=${open}, pays=${t.pays.length}` };
+  },
+  // triple-click on Pay after abandoning an email edit: later clicks must not hit Save (which would store the abandoned email) or pay
+  "triple-click-pay-saves-nothing": async t => {
+    await savedSelfToCheckout(t);
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await t.page.fill("#g-email", "typo@exmaple.com"); await closePop(t.page);
+    const before = t.leads.length;
+    await t.page.click("#form [type=submit]", { clickCount: 3, delay: 120 }); await t.page.waitForTimeout(1000);
+    const leaked = t.leads.slice(before).some(l => l.buyer && l.buyer.email === "typo@exmaple.com");
+    return { pass: t.pays.length === 0 && !leaked && await popOpen(t.page), detail: `pays=${t.pays.length}, abandoned email sent=${leaked}, pop-up open=${await popOpen(t.page)}` };
+  },
+  // details typed for "Someone I love" and closed with ✕ must never be uploaded by the later automatic saves
+  "abandoned-recipient-not-uploaded": async t => {
+    await openBuilder(t.page); await pickWho(t.page, "self"); await fillSelf(t.page); await tick(t.page); await save(t.page);
+    await t.page.waitForSelector('#builder .screen[data-screen="domain"]:not([hidden])'); await t.page.waitForTimeout(SETTLE); await t.page.click("#bBack");
+    await t.page.waitForSelector('#builder .screen[data-screen="who"]:not([hidden])'); await t.page.waitForTimeout(SETTLE);
+    await pickWho(t.page, "other"); await t.page.fill("#r-name", "Abandoned Friend"); await t.page.fill("#r-phone", "9876511111"); await t.page.fill("#r-email", "abandoned@example.com"); await closePop(t.page);
+    await closeBuilder(t.page); await openBuilder(t.page); await domainToCheckout(t.page);
+    const leaked = t.leads.some(l => JSON.stringify(l).includes("Abandoned")), modes = [...new Set(t.leads.map(l => l.mode))].join(",");
+    return { pass: !leaked && modes === "self", detail: `abandoned recipient uploaded=${leaked}, modes sent=${modes}, saves=${t.leads.map(l => l.stage).join(">")}` };
+  },
+  // inputs the server would refuse are refused in the pop-up, so no consented visitor goes on without a stored lead
+  "server-refused-input-caught": async t => {
+    await openBuilder(t.page); await pickWho(t.page, "self"); await fillSelf(t.page); await t.page.fill("#g-name", "<>"); await tick(t.page); await save(t.page); await t.page.waitForTimeout(300);
+    const n1 = await hasBad(t.page, "#g-name");
+    await t.page.fill("#g-name", "QA Test"); await t.page.fill("#g-email", "qa<1>@example.com"); await save(t.page); await t.page.waitForTimeout(300);
+    const n2 = await hasBad(t.page, "#g-email");
+    await t.page.fill("#g-email", "a".repeat(115) + "@example.com"); await save(t.page); await t.page.waitForTimeout(300);
+    const n3 = await hasBad(t.page, "#g-email"), max = await t.page.getAttribute("#note", "maxlength");
+    return { pass: n1 && n2 && n3 && t.leads.length === 0 && max === "400" && await popOpen(t.page), detail: `name "<>" refused=${n1}, email with <> refused=${n2}, 127-char email refused=${n3}, note maxlength=${max}, leads=${t.leads.length}` };
+  },
+  // a double-tap on Continue must not also pick a learning area on the next screen
+  "double-tap-continue-no-ghost-pick": async t => {
+    await openBuilder(t.page); await pickWho(t.page, "self"); await fillSelf(t.page); await tick(t.page);
+    await t.page.dblclick("#dpopGo"); await t.page.waitForTimeout(900);
+    const sc = await screen(t.page);
+    return { pass: sc === "domain", detail: `screen after a double-tap on Continue: "${sc}" (should stay on the learning-area choice)` };
+  },
+  // Pay reopened for valid-but-unsaved details says why
+  "unsaved-details-hint": async t => {
+    await savedSelfToCheckout(t);
+    await t.page.click("#editDetails"); await t.page.waitForSelector("#dpop:not([hidden])"); await t.page.waitForTimeout(SETTLE); await t.page.fill("#g-name", "QA Test2"); await closePop(t.page);
+    await pressPay(t.page);
+    const hint = (await t.page.textContent("#dpopHint")).trim();
+    return { pass: t.pays.length === 0 && /save your details/i.test(hint), detail: `pays=${t.pays.length}, hint="${hint}"` };
   },
   "happy-me-phone": async t => {
     await savedSelfToCheckout(t); await pressPay(t.page);

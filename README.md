@@ -69,13 +69,13 @@ Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`)
 - T&C → https://www.upgrad.com/terms/
 - Privacy Policy → https://www.upgrad.com/privacy/
 
-Validation happens in the browser and again on the server (10-digit Indian mobile, valid email, length limits). Writes are rate-limited to 30 a minute per IP.
+Validation happens in the browser and again on the server, with the same rules: a 10-digit Indian mobile, a valid email of up to 120 characters, no `<` or `>`, and a Diwali note of up to 400 characters. Only details the visitor saved in the pop-up are ever sent; anything edited and then closed with ✕ stays in the browser. Writes are rate-limited to 120 per IP in fixed 60-second windows, so a busy shared IP (an office, or mobile carrier NAT) recovers every minute. Taps within 0.4 s of a screen or the pop-up appearing are ignored, so a double tap can't tick the consent box or press Save by accident.
 
 **Storage:** Upstash Redis (REST API), every key prefixed `badhai:`:
 
 - `badhai:leads`: hash, `id → lead JSON`
 - `badhai:leads:idx`: sorted set of ids by created time
-- `badhai:rl:<ip>`: rate-limit counters (expire after 60 s)
+- `badhai:rl:<ip>`: rate-limit counters (a fixed 60 s window, opened with `SET … EX 60 NX`)
 
 ⚠️ The Redis database is **shared with other upGrad projects**. Only touch keys under `badhai:` and never run `FLUSHDB` / `FLUSHALL`. When moving to upGrad's own infrastructure, point the env vars at a dedicated database and copy the two `badhai:leads*` keys across.
 

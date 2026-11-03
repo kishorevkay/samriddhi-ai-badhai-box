@@ -379,6 +379,8 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
 .rv-inside { margin-top: 40px; }
 .rv-groups { margin-top: 18px; }
 .rv-loaded { margin-top: 70px; }
+.rv-edition { display: flex; justify-content: center; margin-top: 64px; } /* the price card closes the reveal, after what's inside */
+.rv-edition .edition { width: min(420px, 100%); padding: 22px 24px; }
 .rv-loaded-h { font-size: clamp(1.6rem, 2.8vw, 2.3rem); max-width: 24ch; margin: 0 auto; }
 .reveal .carousel { margin-top: 24px; }
 /* payment summary */
@@ -405,6 +407,7 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
   .rv-domain { flex-direction: column; align-items: stretch; padding: 18px; gap: 16px; }
   .rv-domain h3 { font-size: 24px; }
   .rv-loaded { margin-top: 48px; }
+  .rv-edition { margin-top: 40px; }
 }
 
 /* landing carousel inside the "AI Badhaai Box by upGrad" band */
