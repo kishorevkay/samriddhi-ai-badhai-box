@@ -84,7 +84,14 @@ Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`)
 - The CSV adds `came_from`, `campaign`, `ad`, `referrer`, `medium`, `ad_set_or_keyword` and `placement`.
 
 **Tracking links: copy, then replace the `<…>` parts (lowercase, underscores, no spaces).**
-⚠️ **Always use the trailing slash: `https://www.upgrad.com/your-diwali-gift/?…`.** Without the `/` before the `?`, upgrad.com answers with a 302 redirect to `/your-diwali-gift/` that drops every UTM tag, and those leads show as "Direct / unknown". Checked on 4 Nov 2026.
+⚠️ **Use the trailing slash where you can: `https://www.upgrad.com/your-diwali-gift/?…`.** Without the `/` before the `?`, upgrad.com's S3 answers with a 302 redirect to `/your-diwali-gift/` that drops every UTM tag (checked 4 Nov 2026). Those leads show as "Tags lost in redirect" until the fix below is in place. Some partner links (Zepto, Zomato, GPay) already went out without the slash, so the fix matters.
+
+**For the upgrad.com deploy: keep the tags on links without the slash.** Do either one:
+1. **CloudFront:** give `/your-diwali-gift` the same trailing-slash redirect as `/blog`. `/blog?utm_source=x` already 301s to `/blog/?utm_source=x` with the query kept.
+2. **S3:** upload the file `upgrad-s3/your-diwali-gift` from this repo to the bucket **root** as the object key `your-diwali-gift` (no slash, no extension), with `Content-Type: text/html; charset=utf-8`. S3 then serves it instead of its folder redirect. It forwards to `/your-diwali-gift/` with the `?…` and `#…` kept.
+
+Either way, invalidate `/your-diwali-gift` and `/your-diwali-gift/*` in CloudFront afterwards. The old 302 is cached.
+
 
 | Where the link runs | Add after `https://www.upgrad.com/your-diwali-gift/?` | Shows in /admin as |
 |---|---|---|

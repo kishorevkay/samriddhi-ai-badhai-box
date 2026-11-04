@@ -215,7 +215,10 @@
     try { var s = JSON.parse(sessionStorage.getItem(k) || "null"); if (s) return s; } catch (e) {}
     var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(x){ u.delete(x); });
     var ref = ""; try { var r = document.referrer && new URL(document.referrer); if (r && !(r.host === location.host && r.pathname === location.pathname)) ref = (r.host + r.pathname).slice(0, 120); } catch (e) {}
-    var o = { qs: u.toString().slice(0, 400), ref: ref };
+    // upgrad.com's S3 answers /your-diwali-gift?… (no slash) with a same-origin redirect to /your-diwali-gift/ that drops the tags:
+    // if we arrived through a redirect with no tags left, say so, so /admin can tell those visits apart from truly direct ones
+    var nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+    var o = { qs: u.toString().slice(0, 400), ref: ref, via: nav && nav.redirectCount > 0 && !u.toString() ? "redirect" : "" };
     try { sessionStorage.setItem(k, JSON.stringify(o)); } catch (e) {}
     return o;
   })();
@@ -235,7 +238,7 @@
     var body = { id: leadId, stage: stage, mode: d.mode, domain: state.domain ? state.domain.name : "",
       buyer: d.buyer, recipient: d.recipient, consent: true, consentAt: d.consentAt,
       box: boxForLead(),
-      source: cameFrom.qs, ref: cameFrom.ref };
+      source: cameFrom.qs, ref: cameFrom.ref, via: cameFrom.via || "" };
     try { return fetch(LEAD_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) { return Promise.resolve(); }
   }
   /* ---------- builder navigation ---------- */

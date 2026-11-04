@@ -120,6 +120,9 @@
     [/^(qr|qrcode|print|poster|offline)/, "QR / offline"], [/^(bing|microsoft)/, "Bing"], [/^(snapchat|snap)$/, "Snapchat"], [/^pinterest$/, "Pinterest"], [/^reddit$/, "Reddit"], [/^quora$/, "Quora"]
   ];
   var REF = [ // referring host (web, or the Android app id) → label; email and apps before the general sites
+    // partner apps and sites (Android passes the app id as the referrer when the app opens the link in the browser)
+    [/^com\.zeptoconsumerapp$/, "Zepto"], [/(^|\.)zeptonow\.com$/, "Zepto"], [/^com\.application\.zomato$/, "Zomato"], [/(^|\.)zomato\.com$/, "Zomato"],
+    [/^com\.google\.android\.apps\.nbu\.paisa\.user$/, "GPay"], [/(^|\.)pay\.google\.com$/, "GPay"],
     [/^com\.google\.android\.gm$/, "Email"], [/(^|\.)(mail\.google\.com|outlook\.(live|office|office365)\.com|mail\.yahoo\.com)$/, "Email"],
     [/^com\.instagram\.android$/, "Instagram"], [/^com\.facebook\.(katana|lite|orca)$/, "Facebook"], [/^com\.whatsapp(\.w4b)?$/, "WhatsApp"], [/^org\.telegram\.messenger$/, "Telegram"],
     [/^com\.linkedin\.android$/, "LinkedIn"], [/^com\.google\.android\.youtube$/, "YouTube"], [/^com\.google\.android\.googlequicksearchbox$/, "Google"],
@@ -143,7 +146,7 @@
     else if (q.has("igshid") || q.has("igsh")) label = "Instagram"; // a shared Instagram link
     else if (fromRef) label = fromRef;
     else if (host) label = host.replace(/^www\./, "");
-    else label = "Direct / unknown";
+    else label = l.via === "redirect" ? "Tags lost in redirect" : "Direct / unknown"; // via: came through upgrad.com's no-slash redirect
     if (label === "Meta" && /^(Instagram|Facebook)$/.test(fromRef)) label = fromRef; // a bare fbclid: the referrer tells which app
     if ((click || /(^|_)(paid|cpc|ppc|cpm|cpv|ads?|display|sponsored|paidsocial)($|_)/.test(med)) && ADS.test(label)) label += " ad";
     var t = function(k){ return (q.get(k) || "").trim(); };

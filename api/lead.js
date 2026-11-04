@@ -61,6 +61,7 @@ export default async function handler(req, res) {
       box: box || prev.box || null,
       source: prev.source || cleanText(b.source, 400), // the landing link's query string: UTM tags, fbclid, gclid
       ref: prev.ref || cleanText(b.ref, 120),          // the referring page, host + path
+      via: prev.via || (b.via === "redirect" ? "redirect" : ""), // landed through a redirect that dropped the link's tags
       site: prev.site || siteOf(req),
       device: prev.device || (/Mobi|Android|iPhone/i.test(String(req.headers["user-agent"] || "")) ? "mobile" : "desktop"),
     };
