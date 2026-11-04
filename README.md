@@ -70,14 +70,38 @@ Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`)
 
 **Where leads came from ("Came from" in `/admin`):**
 - What each lead stores:
-  - `source`: the landing link's query string (UTM tags, Meta's `fbclid`, Google's `gclid`).
-  - `ref`: the referring page (host + path).
+  - `source`: the landing link's query string (UTM tags plus any ad click id: Meta's `fbclid`, Google's `gclid`, …).
+  - `ref`: the referring page or app (host + path).
 - Both are taken from the page the visitor first landed on in that tab, and kept through reloads and Back.
-- `/admin` turns them into a label: Instagram / Facebook / Meta / Google (with " ad" for paid clicks), WhatsApp, Email, the referring site, or "Direct / unknown". The label shows with the campaign · ad name, plus a "From ads" tile and a "From" filter.
-- The CSV adds `came_from`, `campaign`, `ad` and `referrer`.
-- To get campaign and ad names, tag the ad links:
-  - In Meta Ads Manager → Ad → Tracking → URL parameters, add `utm_source={{site_source_name}}&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}`. `{{site_source_name}}` becomes `fb` or `ig`.
-  - On emailers, add `?utm_source=clevertap&utm_medium=email&utm_campaign=<name>`.
+- How `/admin` picks the label, first match wins:
+  1. A messaging `utm_medium` (email, sms, push, whatsapp).
+  2. `utm_source`: Instagram, Facebook, Messenger, Meta, Google, YouTube, LinkedIn, X, WhatsApp, Telegram, SMS, Push, Email (CleverTap, Netcore, MoEngage, …), upGrad website, QR / offline, Bing, and so on. Partner placements: `Zepto_BRD` → **Zepto**, `Zomato_BRD` → **Zomato**, `GPay_BRD` → **GPay**. Any other `<Name>_BRD` shows as `<Name>`, and any other `utm_source` shows as written.
+  3. An ad click id the platform adds by itself: `fbclid` → Meta (Instagram or Facebook going by the referrer), `gclid`/`gbraid`/`wbraid` → Google, `msclkid` → Bing, `li_fat_id` → LinkedIn, and more.
+  4. The referring site or app: Instagram, Facebook, Gmail and other mail apps, Google, YouTube, WhatsApp, upgrad.com, …
+  5. Otherwise "Direct / unknown".
+- Paid clicks (a click id, or a paid / cpc / paid_social medium) get " ad", e.g. "Instagram ad". The line under the label is campaign · ad set or keyword (`utm_term`) · ad (`utm_content`) · `placement`.
+- `/admin` also has a "From" filter and a "From ads" tile.
+- The CSV adds `came_from`, `campaign`, `ad`, `referrer`, `medium`, `ad_set_or_keyword` and `placement`.
+
+**Tracking links: copy, then replace the `<…>` parts (lowercase, underscores, no spaces).**
+⚠️ **Always use the trailing slash: `https://www.upgrad.com/your-diwali-gift/?…`.** Without the `/` before the `?`, upgrad.com answers with a 302 redirect to `/your-diwali-gift/` that drops every UTM tag, and those leads show as "Direct / unknown". Checked on 4 Nov 2026.
+
+| Where the link runs | Add after `https://www.upgrad.com/your-diwali-gift/?` | Shows in /admin as |
+|---|---|---|
+| Meta ads (Ads Manager → Ad → Tracking → URL parameters; Meta fills the `{{…}}`) | `utm_source={{site_source_name}}&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_term={{adset.name}}&utm_content={{ad.name}}&placement={{placement}}` | Instagram ad / Facebook ad / Messenger ad · campaign · ad set · ad · placement |
+| Partner placements (campaign team's format) | `utm_source=Zepto_BRD&utm_medium=Brand&utm_campaign=ind_brd_leadgen_All_Diwali_2026` (or `Zomato_BRD`, `GPay_BRD`, `<Partner>_BRD`) | Zepto / Zomato / GPay / <Partner> · campaign |
+| Instagram bio / story / post | `utm_source=instagram&utm_medium=organic_social&utm_campaign=diwali_badhaai&utm_content=<bio\|story\|post_name>` | Instagram |
+| Facebook post | `utm_source=facebook&utm_medium=organic_social&utm_campaign=diwali_badhaai&utm_content=<post_name>` | Facebook |
+| Emailer (CleverTap) | `utm_source=clevertap&utm_medium=email&utm_campaign=diwali_badhaai&utm_content=<email_name>` | Email |
+| Push notification (CleverTap) | `utm_source=clevertap&utm_medium=push&utm_campaign=diwali_badhaai&utm_content=<push_name>` | Push notification |
+| SMS | `utm_source=sms&utm_medium=sms&utm_campaign=diwali_badhaai` | SMS |
+| WhatsApp broadcast | `utm_source=whatsapp&utm_medium=whatsapp&utm_campaign=diwali_badhaai&utm_content=<message_name>` | WhatsApp |
+| Google Ads (auto-tagging adds `gclid`; Final URL suffix) | `utm_source=google&utm_medium=cpc&utm_campaign={campaignid}&utm_term={keyword}&utm_content={creative}` | Google ad |
+| YouTube ads | `utm_source=youtube&utm_medium=paid_video&utm_campaign=<name>&utm_content=<video_name>` | YouTube ad |
+| LinkedIn ads | `utm_source=linkedin&utm_medium=paid_social&utm_campaign=<name>&utm_content=<ad_name>` | LinkedIn ad |
+| upGrad website banner | `utm_source=upgrad&utm_medium=website&utm_campaign=diwali_badhaai&utm_content=<banner_name>` | upGrad website |
+| QR code / poster | `utm_source=qr&utm_medium=offline&utm_campaign=diwali_badhaai&utm_content=<where_it_is>` | QR / offline |
+| Creator / influencer | `utm_source=<creator_name>&utm_medium=influencer&utm_campaign=diwali_badhaai` | <creator_name> |
 
 **Hosting a copy elsewhere (e.g. upgrad.com/your-diwali-gift/):** the site is plain static files and works under any sub-path; every path is relative. A static host has no `/api` of its own, so leads always go to the Vercel API at `https://samriddhi-gift-draft.vercel.app/api/lead` (`LEAD_API` in `app.js`; same-origin `/api/lead` on Vercel and localhost). They are sent as a `text/plain` body so the cross-site POST needs no CORS preflight, and `api/lead.js` allows any origin. If you build your own lead API, point `LEAD_API` at it.
 

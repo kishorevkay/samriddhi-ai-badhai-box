@@ -104,22 +104,51 @@
       .catch(function(e){ store(""); show(false); $("#err").textContent = e.message; });
   }
 
-  // where a lead came from: the landing link's UTM tags / ad click ids first (fbclid = Meta ad, gclid = Google ad), then the referring
-  // page. Ad links tagged utm_source={{site_source_name}}&utm_campaign={{campaign.name}}&utm_content={{ad.name}} also give campaign + ad.
+  /* where a lead came from, read from the landing link's tags and the referring page:
+     1. a messaging utm_medium (email / sms / push / whatsapp),
+     2. otherwise utm_source (the tracking links in the README),
+     3. otherwise the ad click id the platform adds by itself (fbclid = Meta, gclid = Google, …),
+     4. otherwise the referring site or app.
+     Paid clicks get " ad". The detail line is campaign · ad set or keyword (utm_term) · ad (utm_content) · placement. */
+  var SRC = [ // utm_source → label (first match wins)
+    // brand placements in partner apps (the campaign team's tags, e.g. utm_source=Zepto_BRD&utm_medium=Brand); any other <Name>_BRD shows as <Name>
+    [/^zepto(_brd)?$/, "Zepto"], [/^zomato(_brd)?$/, "Zomato"], [/^(gpay|googlepay|google_pay)(_brd)?$/, "GPay"],
+    [/^(ig|instagram)/, "Instagram"], [/^(fb|facebook)/, "Facebook"], [/^(msg|messenger)$/, "Messenger"], [/^an$/, "Meta Audience Network"], [/^(meta|fbig)$/, "Meta"],
+    [/^(youtube|yt)$/, "YouTube"], [/^(google|adwords|gads)/, "Google"], [/^(linkedin|li)$/, "LinkedIn"], [/^(x|twitter|tw)$/, "X (Twitter)"],
+    [/^(whatsapp|wa)$/, "WhatsApp"], [/^(telegram|tg)$/, "Telegram"], [/^(sms|text)$/, "SMS"], [/^(push|notification)/, "Push notification"],
+    [/^(clevertap|email|e-?mail|newsletter|mailer|mailchimp|sendgrid|netcore|moengage|webengage)/, "Email"], [/^upgrad/, "upGrad website"],
+    [/^(qr|qrcode|print|poster|offline)/, "QR / offline"], [/^(bing|microsoft)/, "Bing"], [/^(snapchat|snap)$/, "Snapchat"], [/^pinterest$/, "Pinterest"], [/^reddit$/, "Reddit"], [/^quora$/, "Quora"]
+  ];
+  var REF = [ // referring host (web, or the Android app id) → label; email and apps before the general sites
+    [/^com\.google\.android\.gm$/, "Email"], [/(^|\.)(mail\.google\.com|outlook\.(live|office|office365)\.com|mail\.yahoo\.com)$/, "Email"],
+    [/^com\.instagram\.android$/, "Instagram"], [/^com\.facebook\.(katana|lite|orca)$/, "Facebook"], [/^com\.whatsapp(\.w4b)?$/, "WhatsApp"], [/^org\.telegram\.messenger$/, "Telegram"],
+    [/^com\.linkedin\.android$/, "LinkedIn"], [/^com\.google\.android\.youtube$/, "YouTube"], [/^com\.google\.android\.googlequicksearchbox$/, "Google"],
+    [/(^|\.)instagram\.com$/, "Instagram"], [/(^|\.)(facebook\.com|fb\.com|fb\.me|messenger\.com)$/, "Facebook"], [/(^|\.)(youtube\.com|youtu\.be)$/, "YouTube"],
+    [/(^|\.)google\.[a-z.]+$/, "Google"], [/(^|\.)bing\.com$/, "Bing"], [/(^|\.)(linkedin\.com|lnkd\.in)$/, "LinkedIn"], [/(^|\.)(t\.co|twitter\.com|x\.com)$/, "X (Twitter)"],
+    [/(^|\.)(whatsapp\.com|wa\.me)$/, "WhatsApp"], [/(^|\.)(t\.me|telegram\.org)$/, "Telegram"], [/(^|\.)upgrad\.com$/, "upGrad website"],
+    [/(^|\.)(duckduckgo\.com|search\.yahoo\.com)$/, "Search"], [/(^|\.)snapchat\.com$/, "Snapchat"], [/(^|\.)(pinterest\.[a-z.]+|pin\.it)$/, "Pinterest"], [/(^|\.)reddit\.com$/, "Reddit"], [/(^|\.)quora\.com$/, "Quora"]
+  ];
+  var CLICK = [["fbclid", "Meta"], ["gclid", "Google"], ["gbraid", "Google"], ["wbraid", "Google"], ["dclid", "Google"], ["msclkid", "Bing"], ["li_fat_id", "LinkedIn"], ["twclid", "X (Twitter)"], ["ttclid", "TikTok"], ["sccid", "Snapchat"], ["epik", "Pinterest"]];
+  var ADS = /^(Instagram|Facebook|Messenger|Meta|Meta Audience Network|Google|YouTube|LinkedIn|X \(Twitter\)|Bing|TikTok|Snapchat|Pinterest)$/;
+  function first(list, s){ for (var i = 0; i < list.length; i++) if (list[i][0].test(s)) return list[i][1]; return ""; }
   function cameFrom(l){
-    var q = new URLSearchParams(l.source || ""), src = (q.get("utm_source") || "").toLowerCase(), med = (q.get("utm_medium") || "").toLowerCase(), ref = (l.ref || "").toLowerCase();
-    var label;
-    if (/^(ig|instagram)/.test(src) || (!src && /instagram\./.test(ref))) label = "Instagram";
-    else if (/^(fb|facebook)/.test(src) || (!src && /facebook\.|fb\.com/.test(ref))) label = "Facebook";
-    else if (/^(meta|msg|an)$/.test(src) || q.has("fbclid")) label = /instagram\./.test(ref) ? "Instagram" : /facebook\./.test(ref) ? "Facebook" : "Meta";
-    else if (/google/.test(src) || q.has("gclid") || (!src && /(^|\.)google\./.test(ref))) label = "Google";
-    else if (/whatsapp/.test(src) || /whatsapp|wa\.me/.test(ref)) label = "WhatsApp";
-    else if (/(e-?mail|clevertap|newsletter)/.test(src + " " + med)) label = "Email";
-    else if (src) label = q.get("utm_source");
-    else if (ref) label = ref.replace(/^www\./, "").replace(/\/$/, "");
+    var q = new URLSearchParams(l.source || ""), src = (q.get("utm_source") || "").trim().toLowerCase(), med = (q.get("utm_medium") || "").trim().toLowerCase();
+    var host = String(l.ref || "").toLowerCase().split("/")[0], fromRef = host ? first(REF, host) : "", click = "", label;
+    for (var i = 0; i < CLICK.length; i++) if (q.has(CLICK[i][0])) { click = CLICK[i][1]; break; }
+    // a messaging medium decides first: one platform (e.g. CleverTap) sends email, push and SMS alike
+    var ch = /(^|_)(e-?mail|newsletter)($|_)/.test(med) ? "Email" : med === "sms" ? "SMS" : /^push/.test(med) ? "Push notification" : /^whatsapp/.test(med) ? "WhatsApp" : "";
+    if (ch) label = ch;
+    else if (src) label = first(SRC, src) || q.get("utm_source").trim().replace(/[_\s-]+brd$/i, "");
+    else if (click) label = click;
+    else if (q.has("igshid") || q.has("igsh")) label = "Instagram"; // a shared Instagram link
+    else if (fromRef) label = fromRef;
+    else if (host) label = host.replace(/^www\./, "");
     else label = "Direct / unknown";
-    if ((q.has("fbclid") || q.has("gclid") || /(paid|cpc|ppc|^ads?$|sponsored)/.test(med)) && /^(Instagram|Facebook|Meta|Google)$/.test(label)) label += " ad";
-    return { label: label, detail: [q.get("utm_campaign"), q.get("utm_content")].filter(Boolean).join(" · ") };
+    if (label === "Meta" && /^(Instagram|Facebook)$/.test(fromRef)) label = fromRef; // a bare fbclid: the referrer tells which app
+    if ((click || /(^|_)(paid|cpc|ppc|cpm|cpv|ads?|display|sponsored|paidsocial)($|_)/.test(med)) && ADS.test(label)) label += " ad";
+    var t = function(k){ return (q.get(k) || "").trim(); };
+    return { label: label, detail: [t("utm_campaign"), t("utm_term"), t("utm_content"), t("placement")].filter(Boolean).join(" · "),
+      medium: t("utm_medium"), adset: t("utm_term"), placement: t("placement") };
   }
   function filtered(){
     var q = $("#q").value.trim().toLowerCase(), st = $("#fStage").value, md = $("#fMode").value, dm = $("#fDomain").value, fr = $("#fFrom").value;
@@ -165,12 +194,12 @@
     return ["essential", "mastery", "short", "ai", "free", "bigger"].reduce(function(all, k){ return all.concat(box[k] || []); }, []).join(", ");
   }
   function csv(){
-    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id", "site", "came_from", "campaign", "ad", "referrer"];
+    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id", "site", "came_from", "campaign", "ad", "referrer", "medium", "ad_set_or_keyword", "placement"];
     var cell = function(v){ v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
     var lines = [cols.join(",")].concat(filtered().map(function(l){
-      var b = l.buyer || {}, r = l.recipient || {}, q = new URLSearchParams(l.source || "");
+      var b = l.buyer || {}, r = l.recipient || {}, q = new URLSearchParams(l.source || ""), c;
       return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id, l.site,
-        cameFrom(l).label, q.get("utm_campaign"), q.get("utm_content"), l.ref].map(cell).join(",");
+        (c = cameFrom(l)).label, q.get("utm_campaign"), q.get("utm_content"), l.ref, c.medium, c.adset, c.placement].map(cell).join(",");
     }));
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
