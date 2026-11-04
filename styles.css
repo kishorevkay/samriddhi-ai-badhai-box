@@ -620,6 +620,24 @@ html.lenis, html.lenis body { height: auto; }
 .sum-people .sum-v { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
 #editDetails { padding: 4px 0 12px; min-height: 0; color: var(--bg-deep); }
 @media (max-width: 640px) { .dpop { padding: 10px; align-items: end; } .dpop-card { border-radius: 22px 22px 16px 16px; } .dpop-title { font-size: 22px; } }
+/* phones: the details sheet fits on one screen, even "Someone I love" (their details + note + yours): name and mobile side by side,
+   tighter spacing, a 3-line note (the default text). Inputs keep 16px text so iPhones don't zoom in on focus. */
+@media (max-width: 640px) {
+  #detailsForm { padding: 16px 14px 12px; }
+  #detailsForm .dpop-title { font-size: 20px; margin: 2px 44px 10px 0; }
+  #detailsForm .dpop-x { top: 10px; right: 10px; }
+  #detailsForm fieldset { gap: 8px; margin-bottom: 10px; }
+  #detailsForm legend { font-size: 17px; margin-bottom: 6px; }
+  #detailsForm .self-line { margin: 0 0 2px; font-size: 14px; }
+  #detailsForm .row2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #detailsForm label { gap: 4px; font-size: 10.5px; letter-spacing: .05em; }
+  #detailsForm input, #detailsForm textarea { padding: 10px 11px; border-radius: 10px; }
+  #detailsForm textarea { height: 92px; resize: none; } /* the default note's 3 lines, no more */
+  #detailsForm .consent { padding: 9px 11px; margin: 0 0 4px; }
+  #detailsForm .pay { padding: 14px 12px; margin-top: 2px; }
+  #detailsForm .secure { margin-top: 6px; font-size: 13px; }
+  #detailsForm .secure:empty { margin: 0; } /* stays in the page (it's an aria-live hint), just takes no room */
+}
 /* form buttons match the v3 page CTAs (maroon, gold edge, serif) */
 .pay { background: var(--v3-red); border: 2px solid var(--v3-gold); font: 500 19px/1 var(--serif-b); color: var(--v3-cream); padding: 17px; box-shadow: 0 10px 24px rgba(80,0,20,.25); }
 @media (max-width: 640px) { .pay { font-size: min(19px, 4.4vw); padding: 17px 12px; } } /* "Send their AI Badhaai Box for ₹249" stays on one line on phones */

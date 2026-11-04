@@ -208,6 +208,17 @@
   var LEAD_API = /^(localhost|127\.0\.0\.1)$|\.vercel\.app$/.test(location.hostname) ? "/api/lead" : "https://samriddhi-gift-draft.vercel.app/api/lead";
 
   /* ---------- lead capture → /api/lead (Upstash, read in /admin). One row per visit, updated as the visitor moves on ---------- */
+  // where the visitor came from, taken from the page they first landed on in this tab: the link's query string (UTM tags, Meta's
+  // fbclid, Google's gclid) and the referring page (host + path, no query). Kept in sessionStorage so a reload or Back keeps it.
+  var cameFrom = (function(){
+    var k = "badhaai:from";
+    try { var s = JSON.parse(sessionStorage.getItem(k) || "null"); if (s) return s; } catch (e) {}
+    var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(x){ u.delete(x); });
+    var ref = ""; try { var r = document.referrer && new URL(document.referrer); if (r && !(r.host === location.host && r.pathname === location.pathname)) ref = (r.host + r.pathname).slice(0, 120); } catch (e) {}
+    var o = { qs: u.toString().slice(0, 400), ref: ref };
+    try { sessionStorage.setItem(k, JSON.stringify(o)); } catch (e) {}
+    return o;
+  })();
   var leadId = "", savedDetails = null; // savedDetails: what the visitor last confirmed in the pop-up (box ticked); only this ever leaves the browser
   function newLeadId(){ return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)); }
   function snapshotDetails(){
@@ -224,7 +235,7 @@
     var body = { id: leadId, stage: stage, mode: d.mode, domain: state.domain ? state.domain.name : "",
       buyer: d.buyer, recipient: d.recipient, consent: true, consentAt: d.consentAt,
       box: boxForLead(),
-      source: (function(){ var u = new URLSearchParams(location.search); ["frame", "device", "screens"].forEach(function(k){ u.delete(k); }); return u.toString().slice(0, 160); })() };
+      source: cameFrom.qs, ref: cameFrom.ref };
     try { return fetch(LEAD_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body), keepalive: true }).catch(function(){}); } catch (e) { return Promise.resolve(); }
   }
   /* ---------- builder navigation ---------- */
@@ -244,7 +255,7 @@
   builder.addEventListener("click", function(e){ var dt = performance.now() - shownAt; if (dt < 400 || (e.detail > 1 && dt < 1000)){ e.preventDefault(); e.stopPropagation(); } }, true);
   function go(name){
     clearFlow();
-    if (name !== "curate" && tornado) tornado.stop();
+    if (name !== "curate" && tornado && tornado.stop) tornado.stop(); // while three.js is still loading, tornado is a bare {} placeholder
     state.screen = name; shownAt = performance.now();
     builder.querySelectorAll(".screen").forEach(function(s){ var on = s.dataset.screen === name; s.hidden = !on; if (on){ s.classList.remove("enter"); void s.offsetWidth; s.classList.add("enter"); } });
     builder.querySelectorAll(".b-dots i").forEach(function(d, i){ d.classList.toggle("on", i < DOT[name]); });
@@ -462,18 +473,21 @@
   });
   $("#rvGroups").addEventListener("click", function(e){ var b = e.target.closest(".swap"); if (b) openSwap(b); });
   function showReveal(){
+    renderReveal();
+    sendLead("curated");
+    go("reveal");
+    // plain timers (not later()): leaving the screen early must not leave cards hidden
+    document.querySelectorAll("#rvGroups .group").forEach(function(el, i){ setTimeout(function(){ el.classList.add("in"); }, reduce ? 0 : 120 + i * 140); });
+  }
+  function renderReveal(){
     var d = state.domain, other = state.mode === "other";
     drawBox(d);
-    sendLead("curated");
     $("#rvName").textContent = d.name;
     $("#rvCurated").textContent = d.curated;
     $("#rvLine").textContent = d.line;
     $("#rvEdition").textContent = d.edition;
     $("#rvGroups").innerHTML = boxGroups(d).map(groupHTML).join("") + '<p class="rv-note">' + esc(BOX.note) + '</p>';
     $("#toCheckout").textContent = other ? "Send their AI Badhaai Box for ₹249" : "Get my AI Badhaai Box for ₹249";
-    go("reveal");
-    // plain timers (not later()): leaving the screen early must not leave cards hidden
-    document.querySelectorAll("#rvGroups .group").forEach(function(el, i){ setTimeout(function(){ el.classList.add("in"); }, reduce ? 0 : 120 + i * 140); });
   }
 
   /* ---------- scroll 7 · payment: summary of the selection and the saved details, then Razorpay ---------- */
@@ -514,6 +528,7 @@
       return;
     }
     // payment happens on Razorpay's page; give the "pay" save up to 0.6 s to leave first (keepalive alone was cut off in some WebKit runs)
+    saveResume();
     Promise.race([sendLead("pay"), new Promise(function(r){ setTimeout(r, 600); })]).then(function(){ location.href = PAY_URL; });
   });
   // after-payment screen, kept for when Razorpay redirects back (not wired yet)
@@ -526,7 +541,7 @@
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; savedDetails = null; picksByDomain = {}; dform.reset(); go("who"); });
+  $("#again").addEventListener("click", function(){ try { sessionStorage.removeItem(RESUME); } catch (e) {} state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; savedDetails = null; picksByDomain = {}; dform.reset(); go("who"); });
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */
@@ -585,6 +600,36 @@
     }
     requestAnimationFrame(tick);
   })();
+
+  /* ---------- back from Razorpay: browsers usually reload the page, which used to drop the visitor on the homepage. So the
+     checkout is saved for this tab just before the redirect (sessionStorage: this tab only, gone when it closes) and reopened
+     when they come back with Back. ---------- */
+  var RESUME = "badhaai:checkout";
+  function saveResume(){
+    try {
+      var fields = {};
+      ["r-name", "r-phone", "r-email", "note", "g-name", "g-phone", "g-email"].forEach(function(id){ var el = document.getElementById(id); if (el) fields[id] = el.value; });
+      sessionStorage.setItem(RESUME, JSON.stringify({ t: Date.now(), leadId: leadId, mode: state.mode, domain: state.domain.id, picks: state.picks, details: savedDetails, fields: fields }));
+    } catch (e) {}
+  }
+  function resumeCheckout(){
+    var nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
+    if (!nav || nav.type !== "back_forward") return;
+    var r = null; try { r = JSON.parse(sessionStorage.getItem(RESUME) || "null"); } catch (e) {}
+    var d = r && DOMAINS.filter(function(x){ return x.id === r.domain; })[0];
+    if (!d || !r.leadId || !r.details || Date.now() - r.t > 6 * 3600 * 1000) return;
+    Object.keys(r.fields || {}).forEach(function(id){ var el = document.getElementById(id); if (el) el.value = r.fields[id]; });
+    state.mode = r.mode; state.domain = d; leadId = r.leadId; savedDetails = r.details; consentAt = r.details.consentAt || ""; detailsSaved = true;
+    $("#consent").checked = true; // they ticked it before paying; the saved details carry consent
+    // the saved picks, matched back to the pool items (Swap compares items by identity); a stale or partial set draws a fresh box
+    var pools = { short: d.short, ai: BOX.ai, free: d.free, flagship: d.flagship }, picks = {};
+    Object.keys(BOX.pick).forEach(function(k){ picks[k] = ((r.picks && r.picks[k]) || []).map(function(x){ return pools[k].filter(function(p){ return (p.t || p) === (x.t || x); })[0]; }).filter(Boolean); });
+    if (Object.keys(BOX.pick).every(function(k){ return picks[k].length === BOX.pick[k]; })) picksByDomain[d.id] = picks;
+    $("#domTitle").textContent = state.mode === "other" ? "What would they like to learn?" : "What would you like to learn?";
+    renderReveal(); document.querySelectorAll("#rvGroups .group").forEach(function(el){ el.classList.add("in"); });
+    open(); showCheckout();
+  }
+  if (new URLSearchParams(location.search).get("screens") !== "1") resumeCheckout();
 
   /* ---------- ?screens=1: every builder step laid out on one static page, for importing into Figma ---------- */
   if (new URLSearchParams(location.search).get("screens") === "1") (function(){

@@ -59,7 +59,8 @@ export default async function handler(req, res) {
       mode, buyer, recipient, domain: domain || prev.domain || "",
       consent: true, consentAt: prev.consentAt || consentAt || now,
       box: box || prev.box || null,
-      source: prev.source || cleanText(b.source, 160),
+      source: prev.source || cleanText(b.source, 400), // the landing link's query string: UTM tags, fbclid, gclid
+      ref: prev.ref || cleanText(b.ref, 120),          // the referring page, host + path
       site: prev.site || siteOf(req),
       device: prev.device || (/Mobi|Android|iPhone/i.test(String(req.headers["user-agent"] || "")) ? "mobile" : "desktop"),
     };

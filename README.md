@@ -58,11 +58,22 @@ The builder writes **one lead per visit** and updates it as the visitor moves th
 
 Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `box` (the exact courses: `essential`, `mastery`, `short[]`, `ai[]`, `free[]`, `bigger[]`), `device`, `source` (UTM / query string), `site` (which copy of the site sent it, e.g. `www.upgrad.com` or `samriddhi-gift-draft.vercel.app`, shown under the device in `/admin` and as the last CSV column).
 
+**Where leads came from ("Came from" in `/admin`):**
+- What each lead stores:
+  - `source`: the landing link's query string (UTM tags, Meta's `fbclid`, Google's `gclid`).
+  - `ref`: the referring page (host + path).
+- Both are taken from the page the visitor first landed on in that tab, and kept through reloads and Back.
+- `/admin` turns them into a label: Instagram / Facebook / Meta / Google (with " ad" for paid clicks), WhatsApp, Email, the referring site, or "Direct / unknown". The label shows with the campaign · ad name, plus a "From ads" tile and a "From" filter.
+- The CSV adds `came_from`, `campaign`, `ad` and `referrer`.
+- To get campaign and ad names, tag the ad links:
+  - In Meta Ads Manager → Ad → Tracking → URL parameters, add `utm_source={{site_source_name}}&utm_medium=paid_social&utm_campaign={{campaign.name}}&utm_content={{ad.name}}`. `{{site_source_name}}` becomes `fb` or `ig`.
+  - On emailers, add `?utm_source=clevertap&utm_medium=email&utm_campaign=<name>`.
+
 **Hosting a copy elsewhere (e.g. upgrad.com/your-diwali-gift/):** the site is plain static files and works under any sub-path; every path is relative. A static host has no `/api` of its own, so leads always go to the Vercel API at `https://samriddhi-gift-draft.vercel.app/api/lead` (`LEAD_API` in `app.js`; same-origin `/api/lead` on Vercel and localhost). They are sent as a `text/plain` body so the cross-site POST needs no CORS preflight, and `api/lead.js` allows any origin. If you build your own lead API, point `LEAD_API` at it.
 
 **Courses in `/admin` and the CSV:** the "Courses in the box" column and the CSV `courses` column list every course the visitor ended up with, comma-separated, in box order. Institutions are in brackets (e.g. "MBA (Golden Gate University)"), so no course name contains a comma and the list splits cleanly. Leads from before 2 Nov 2026 have no courses.
 
-**Consent:** the details pop-up has a required, unticked-by-default checkbox with the sentence from the legal review, word for word: "By ticking this box, you agree to our Privacy Policy and Terms & Conditions." Privacy Policy links to https://www.upgrad.com/privacy/ and Terms & Conditions to https://www.upgrad.com/terms/. The visitor can't continue without the tick, and `api/lead.js` rejects any lead without `consent: true`. Pay checks again: if the details pop-up was closed with ✕ instead of saved (box unticked, details changed, or "Me" switched to "Someone I love"), Pay reopens the pop-up instead of going to Razorpay. Reopening the builder skips ahead to the courses only after details have been saved once. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet.
+**Consent:** the details pop-up has a required, unticked-by-default checkbox with the sentence from the legal review, word for word: "By ticking this box, you agree to our Privacy Policy and Terms & Conditions." Privacy Policy links to https://www.upgrad.com/privacy/ and Terms & Conditions to https://www.upgrad.com/terms/. The visitor can't continue without the tick, and `api/lead.js` rejects any lead without `consent: true`. Pay checks again: if the details pop-up was closed with ✕ instead of saved (box unticked, details changed, or "Me" switched to "Someone I love"), Pay reopens the pop-up instead of going to Razorpay. Reopening the builder skips ahead to the courses only after details have been saved once. **Back from Razorpay** returns to the checkout, not the homepage. Browsers usually reload the page there, so just before the redirect the checkout is saved for that tab (sessionStorage: same tab only, cleared when it closes, 6-hour limit). It's reopened when the page loads from a Back/Forward navigation. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet.
 
 **Footer disclaimer:** verbatim from the legal review, with three different links:
 - Terms of Use → the AI Badhaai Box Terms PDF on Google Drive: https://drive.google.com/file/d/1BpS9vXK8kdrQiZYXYwnjXjs0ZPyuqP_h/view?usp=sharing

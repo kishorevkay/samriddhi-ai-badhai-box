@@ -71,9 +71,10 @@
       <select id="fStage"><option value="">All stages</option><option value="details">Filled details</option><option value="curated">Saw their box</option><option value="pay">Pressed pay</option></select>
       <select id="fMode"><option value="">For anyone</option><option value="self">For me</option><option value="other">Someone I love</option></select>
       <select id="fDomain"><option value="">All domains</option><option>Data &amp; AI</option><option>Tech &amp; AI</option><option>Marketing &amp; AI</option><option>Management &amp; AI</option></select>
+      <select id="fFrom"><option value="">From anywhere</option></select>
     </div>
     <div class="wrap"><table>
-      <thead><tr><th>When (IST)</th><th>Stage</th><th>For</th><th>Domain</th><th>Courses in the box</th><th>Buyer</th><th>Recipient</th><th>Diwali note</th><th>Device · source</th></tr></thead>
+      <thead><tr><th>When (IST)</th><th>Stage</th><th>For</th><th>Domain</th><th>Courses in the box</th><th>Buyer</th><th>Recipient</th><th>Diwali note</th><th>Came from</th><th>Device · site</th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
   </section>
@@ -103,12 +104,30 @@
       .catch(function(e){ store(""); show(false); $("#err").textContent = e.message; });
   }
 
+  // where a lead came from: the landing link's UTM tags / ad click ids first (fbclid = Meta ad, gclid = Google ad), then the referring
+  // page. Ad links tagged utm_source={{site_source_name}}&utm_campaign={{campaign.name}}&utm_content={{ad.name}} also give campaign + ad.
+  function cameFrom(l){
+    var q = new URLSearchParams(l.source || ""), src = (q.get("utm_source") || "").toLowerCase(), med = (q.get("utm_medium") || "").toLowerCase(), ref = (l.ref || "").toLowerCase();
+    var label;
+    if (/^(ig|instagram)/.test(src) || (!src && /instagram\./.test(ref))) label = "Instagram";
+    else if (/^(fb|facebook)/.test(src) || (!src && /facebook\.|fb\.com/.test(ref))) label = "Facebook";
+    else if (/^(meta|msg|an)$/.test(src) || q.has("fbclid")) label = /instagram\./.test(ref) ? "Instagram" : /facebook\./.test(ref) ? "Facebook" : "Meta";
+    else if (/google/.test(src) || q.has("gclid") || (!src && /(^|\.)google\./.test(ref))) label = "Google";
+    else if (/whatsapp/.test(src) || /whatsapp|wa\.me/.test(ref)) label = "WhatsApp";
+    else if (/(e-?mail|clevertap|newsletter)/.test(src + " " + med)) label = "Email";
+    else if (src) label = q.get("utm_source");
+    else if (ref) label = ref.replace(/^www\./, "").replace(/\/$/, "");
+    else label = "Direct / unknown";
+    if ((q.has("fbclid") || q.has("gclid") || /(paid|cpc|ppc|^ads?$|sponsored)/.test(med)) && /^(Instagram|Facebook|Meta|Google)$/.test(label)) label += " ad";
+    return { label: label, detail: [q.get("utm_campaign"), q.get("utm_content")].filter(Boolean).join(" · ") };
+  }
   function filtered(){
-    var q = $("#q").value.trim().toLowerCase(), st = $("#fStage").value, md = $("#fMode").value, dm = $("#fDomain").value;
+    var q = $("#q").value.trim().toLowerCase(), st = $("#fStage").value, md = $("#fMode").value, dm = $("#fDomain").value, fr = $("#fFrom").value;
     return leads.filter(function(l){
       if (st && l.stage !== st) return false;
       if (md && l.mode !== md) return false;
       if (dm && l.domain !== dm) return false;
+      if (fr && cameFrom(l).label !== fr) return false;
       if (!q) return true;
       var hay = [l.buyer && l.buyer.name, l.buyer && l.buyer.phone, l.buyer && l.buyer.email, l.recipient && l.recipient.name, l.recipient && l.recipient.phone, l.recipient && l.recipient.email].join(" ").toLowerCase();
       return hay.indexOf(q) > -1;
@@ -119,7 +138,12 @@
     var k = [["Leads", leads.length], ["For me", n(function(l){ return l.mode === "self"; })], ["Someone I love", n(function(l){ return l.mode === "other"; })],
       ["Saw their box", n(function(l){ return l.stage === "curated" || l.stage === "pay"; })], ["Pressed pay", n(function(l){ return l.stage === "pay"; })]];
     ["Data & AI", "Tech & AI", "Marketing & AI", "Management & AI"].forEach(function(d){ k.push([d, n(function(l){ return l.domain === d; })]); });
+    k.push(["From ads", n(function(l){ return / ad$/.test(cameFrom(l).label); })]);
     $("#kpis").innerHTML = k.map(function(x){ return '<div class="kpi"><b>' + x[1] + '</b><span>' + esc(x[0]) + '</span></div>'; }).join("");
+    // the "From" filter lists every source seen so far, keeping the current choice
+    var ff = $("#fFrom"), cur = ff.value, seen = {};
+    leads.forEach(function(l){ seen[cameFrom(l).label] = (seen[cameFrom(l).label] || 0) + 1; });
+    ff.innerHTML = '<option value="">From anywhere</option>' + Object.keys(seen).sort().map(function(s){ return '<option value="' + esc(s) + '"' + (s === cur ? " selected" : "") + ">" + esc(s) + " (" + seen[s] + ")</option>"; }).join("");
     var rows = filtered();
     $("#rows").innerHTML = rows.length ? rows.map(function(l){
       var b = l.buyer || {}, r = l.recipient;
@@ -131,8 +155,9 @@
         "<td>" + esc(b.name) + '<div class="sub">' + esc(b.phone) + "<br>" + esc(b.email) + "</div></td>" +
         "<td>" + (r ? esc(r.name) + '<div class="sub">' + esc(r.phone) + "<br>" + esc(r.email) + "</div>" : '<span class="sub">—</span>') + "</td>" +
         '<td class="note">' + esc(r && r.note) + "</td>" +
-        '<td class="sub">' + esc(l.device) + (l.site ? "<br>" + esc(l.site) : "") + (l.source ? "<br>" + esc(l.source) : "") + "</td></tr>";
-    }).join("") : '<tr><td colspan="9" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
+        (function(c){ return "<td>" + esc(c.label) + (c.detail ? '<div class="sub">' + esc(c.detail) + "</div>" : "") + "</td>"; })(cameFrom(l)) +
+        '<td class="sub">' + esc(l.device) + (l.site ? "<br>" + esc(l.site) : "") + "</td></tr>";
+    }).join("") : '<tr><td colspan="10" class="empty">' + (leads.length ? "No leads match these filters." : "No leads yet.") + "</td></tr>";
   }
   // the exact courses in the visitor's box, as one comma-separated list (leads from before 2 Nov have none)
   function courseList(box){
@@ -140,11 +165,12 @@
     return ["essential", "mastery", "short", "ai", "free", "bigger"].reduce(function(all, k){ return all.concat(box[k] || []); }, []).join(", ");
   }
   function csv(){
-    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id", "site"];
+    var cols = ["created_ist", "updated_ist", "stage", "for", "domain", "courses", "buyer_name", "buyer_mobile", "buyer_email", "recipient_name", "recipient_mobile", "recipient_email", "diwali_note", "device", "source", "id", "site", "came_from", "campaign", "ad", "referrer"];
     var cell = function(v){ v = String(v == null ? "" : v); if (/^[=+\-@]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; };
     var lines = [cols.join(",")].concat(filtered().map(function(l){
-      var b = l.buyer || {}, r = l.recipient || {};
-      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id, l.site].map(cell).join(",");
+      var b = l.buyer || {}, r = l.recipient || {}, q = new URLSearchParams(l.source || "");
+      return [ist(l.created), ist(l.updated), STAGE[l.stage] || l.stage, l.mode === "other" ? "Someone I love" : "Me", l.domain, courseList(l.box), b.name, b.phone, b.email, r.name, r.phone, r.email, r.note, l.device, l.source, l.id, l.site,
+        cameFrom(l).label, q.get("utm_campaign"), q.get("utm_content"), l.ref].map(cell).join(",");
     }));
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
@@ -153,7 +179,7 @@
   }
 
   $("#login").addEventListener("submit", function(e){ e.preventDefault(); start($("#pin").value.trim()); });
-  ["#q", "#fStage", "#fMode", "#fDomain"].forEach(function(s){ $(s).addEventListener("input", render); });
+  ["#q", "#fStage", "#fMode", "#fDomain", "#fFrom"].forEach(function(s){ $(s).addEventListener("input", render); });
   $("#refresh").addEventListener("click", function(){ load().catch(function(e){ alert(e.message); }); });
   $("#csv").addEventListener("click", csv);
   $("#out").addEventListener("click", function(){ store(""); pin = ""; leads = []; clearInterval(timer); show(false); $("#pin").value = ""; });
