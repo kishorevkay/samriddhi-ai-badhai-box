@@ -48,12 +48,22 @@ From the "Diwali Campaign Courses" sheet. Every box has six sections:
 
 ## How lead capture works
 
+**Flow (since 4 Nov):**
+1. Who it's for.
+2. The learning area.
+3. Curation.
+4. The box. Its "Get my AI Badhaai Box for ₹249" button and the gold ₹249 card both open the details pop-up: "Me" asks for your name, mobile and email; "Someone I love" asks for theirs, a Diwali note, and yours. The consent tick is required.
+5. Checkout.
+6. Razorpay.
+
+Nobody is asked for details before they've seen their box, so a lead is written the first time the pop-up is saved, and it starts at `curated`.
+
 The builder writes **one lead per visit** and updates it as the visitor moves through:
 
 | Stage | When it's saved | Shown in /admin as |
 |---|---|---|
-| `details` | After the details pop-up ("Me" → your name/mobile/email; "Someone I love" → their name/mobile/email + Diwali note, and yours) | Filled details |
-| `curated` | A domain is picked and the curated box is shown | Saw their box |
+| `details` | Details saved before any box was shown. Since 4 Nov the pop-up opens from the box, so new leads skip this stage | Filled details |
+| `curated` | The details pop-up is saved from the box (and again when a course is swapped) | Saw their box |
 | `pay` | The pay button is pressed (the visitor goes to Razorpay) | Pressed pay |
 
 Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`), `domain`, `buyer {name, phone, email}`, `recipient {name, phone, email, note}` (gifts only), `consent` (always `true`) with `consentAt` (ISO time the box was ticked), `box` (the exact courses: `essential`, `mastery`, `short[]`, `ai[]`, `free[]`, `bigger[]`), `device`, `source` (UTM / query string), `site` (which copy of the site sent it, e.g. `www.upgrad.com` or `samriddhi-gift-draft.vercel.app`, shown under the device in `/admin` and as the last CSV column).
@@ -73,7 +83,7 @@ Each lead stores: `id`, `created`, `updated`, `stage`, `mode` (`self` / `other`)
 
 **Courses in `/admin` and the CSV:** the "Courses in the box" column and the CSV `courses` column list every course the visitor ended up with, comma-separated, in box order. Institutions are in brackets (e.g. "MBA (Golden Gate University)"), so no course name contains a comma and the list splits cleanly. Leads from before 2 Nov 2026 have no courses.
 
-**Consent:** the details pop-up has a required, unticked-by-default checkbox with the sentence from the legal review, word for word: "By ticking this box, you agree to our Privacy Policy and Terms & Conditions." Privacy Policy links to https://www.upgrad.com/privacy/ and Terms & Conditions to https://www.upgrad.com/terms/. The visitor can't continue without the tick, and `api/lead.js` rejects any lead without `consent: true`. Pay checks again: if the details pop-up was closed with ✕ instead of saved (box unticked, details changed, or "Me" switched to "Someone I love"), Pay reopens the pop-up instead of going to Razorpay. Reopening the builder skips ahead to the courses only after details have been saved once. **Back from Razorpay** returns to the checkout, not the homepage. Browsers usually reload the page there, so just before the redirect the checkout is saved for that tab (sessionStorage: same tab only, cleared when it closes, 6-hour limit). It's reopened when the page loads from a Back/Forward navigation. Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet.
+**Consent:** the details pop-up has a required, unticked-by-default checkbox with the sentence from the legal review, word for word: "By ticking this box, you agree to our Privacy Policy and Terms & Conditions." Privacy Policy links to https://www.upgrad.com/privacy/ and Terms & Conditions to https://www.upgrad.com/terms/. The visitor can't continue without the tick, and `api/lead.js` rejects any lead without `consent: true`. Pay checks again: if the details pop-up was closed with ✕ instead of saved (box unticked, details changed, or "Me" switched to "Someone I love"), Pay reopens the pop-up instead of going to Razorpay. Reopening the builder skips ahead to the courses only after details have been saved once. **Back from Razorpay** lands on the homepage, not on the payment screen: the builder closes, the flow starts fresh and the page goes to the top. This works whether the browser restores the page from its back/forward cache (`pageshow` with `persisted` after a Pay click) or reloads it (scroll restoration off on back/forward loads). Consent is stored in the lead JSON (and in the `/admin` JSON), but it isn't a column in the `/admin` table or CSV yet.
 
 **Footer disclaimer:** verbatim from the legal review, with three different links:
 - Terms of Use → the AI Badhaai Box Terms PDF on Google Drive: https://drive.google.com/file/d/1BpS9vXK8kdrQiZYXYwnjXjs0ZPyuqP_h/view?usp=sharing

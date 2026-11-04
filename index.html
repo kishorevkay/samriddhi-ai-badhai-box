@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Yatra+One&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261104">
+<link rel="stylesheet" href="styles.css?v=20261104.4">
 </head>
 <body>
 
@@ -149,13 +149,14 @@
     </div>
     <p class="step-tag light rv-inside">What’s inside</p>
     <div class="rv-groups" id="rvGroups"></div>
-    <!-- the price card comes after the courses, before "There's a lot packed inside", not up top (Manik + Kish, 3 Nov) -->
+    <!-- the price card comes after the courses, before "There's a lot packed inside", not up top (Manik + Kish, 3 Nov);
+         it's a button: like "Get my AI Badhaai Box", it opens the details pop-up (Kish, 4 Nov) -->
     <div class="rv-edition">
-      <div class="edition" aria-label="Your edition">
+      <button type="button" class="edition" id="rvPrice">
         <span class="ed-brand">AI Badhaai Box by upGrad</span>
         <span class="ed-name" id="rvEdition">MARKETING &amp; AI EDITION</span>
         <span class="ed-price">₹249</span>
-      </div>
+      </button>
     </div>
 
     <div class="rv-loaded" data-carousel>
@@ -247,11 +248,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
 <!-- ?v= makes copies on hosts without cache headers (upgrad.com) load fresh code: bump it whenever these files change -->
-<script src="device.js?v=20261104"></script>
-<script src="data.js?v=20261104"></script>
-<script src="bgfx/v2.js?v=20261104"></script>
-<script src="bgfx/v6.js?v=20261104"></script>
-<script src="bgfx/fireworks.js?v=20261104"></script>
-<script src="app.js?v=20261104"></script>
+<script src="device.js?v=20261104.4"></script>
+<script src="data.js?v=20261104.4"></script>
+<script src="bgfx/v2.js?v=20261104.4"></script>
+<script src="bgfx/v6.js?v=20261104.4"></script>
+<script src="bgfx/fireworks.js?v=20261104.4"></script>
+<script src="app.js?v=20261104.4"></script>
 </body>
 </html>

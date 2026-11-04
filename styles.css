@@ -381,6 +381,11 @@ html.screens-mode .rv-cta { position: static; margin: 50px 0 0; background: none
 .rv-loaded { margin-top: 70px; }
 .rv-edition { display: flex; justify-content: center; margin-top: 64px; } /* the price card closes the reveal, after what's inside */
 .rv-edition .edition { width: min(420px, 100%); padding: 22px 24px; }
+/* the price card is a button (it opens the details pop-up): looks the same, lifts a little on hover */
+button.edition { border: 0; font: inherit; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+button.edition:hover { transform: translateY(-3px); box-shadow: 0 20px 36px rgba(30,0,6,.42), inset 0 0 0 1.5px rgba(184,134,47,.75); }
+button.edition:active { transform: translateY(0); }
+button.edition:focus-visible { outline: 3px solid var(--gold-hi); outline-offset: 4px; }
 .rv-loaded-h { font-size: clamp(1.6rem, 2.8vw, 2.3rem); max-width: 24ch; margin: 0 auto; }
 .reveal .carousel { margin-top: 24px; }
 /* payment summary */
@@ -619,7 +624,7 @@ html.lenis, html.lenis body { height: auto; }
 .sum-people { margin: 14px 0 4px; display: grid; gap: 8px; }
 .sum-people .sum-v { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
 #editDetails { padding: 4px 0 12px; min-height: 0; color: var(--bg-deep); }
-@media (max-width: 640px) { .dpop { padding: 10px; align-items: end; } .dpop-card { border-radius: 22px 22px 16px 16px; } .dpop-title { font-size: 22px; } }
+@media (max-width: 640px) { .dpop { padding: 10px; align-items: center; } .dpop-card { border-radius: 22px; } .dpop-title { font-size: 22px; } } /* phones: centred, not a bottom sheet (Kish, 4 Nov) */
 /* phones: the details sheet fits on one screen, even "Someone I love" (their details + note + yours): name and mobile side by side,
    tighter spacing, a 3-line note (the default text). Inputs keep 16px text so iPhones don't zoom in on focus. */
 @media (max-width: 640px) {
@@ -703,3 +708,27 @@ html.lenis, html.lenis body { height: auto; }
 .cur-tornado { width: calc(100% + 140px); margin: 0 -70px; height: min(680px, 76vh); position: relative; }
 .cur-tornado canvas { display: block; width: 100%; height: 100%; }
 @media (max-width: 640px) { .cur-tornado { width: min(360px, 92vw); height: min(270px, 32svh); margin: 22px 0 0; } }
+
+/* ---------- "this is a button": a gold light runs around the main buttons and their arrow nudges forward (Kish, 4 Nov) ----------
+   The light is a ring masked out of a turning conic gradient, laid exactly over each button's gold border (or edge). */
+@property --run { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.v3-cta, .pay, #toCheckout, #rvPrice { position: relative; isolation: isolate; }
+.v3-cta::after, .pay::after, #toCheckout::after, #rvPrice::after {
+  content: ""; position: absolute; border-radius: inherit; pointer-events: none;
+  inset: calc(-1 * var(--ring-over, 0px)); padding: var(--ring, 2px);
+  background: conic-gradient(from var(--run), transparent 0 48%, var(--ring-a, rgba(255, 240, 200, .45)) 60%, var(--ring-b, #FFFDF5) 71%, var(--ring-c, #FFE7A6) 77%, transparent 90% 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
+  animation: goldrun 2.8s linear infinite;
+}
+.v3-cta { --ring: 3.5px; --ring-over: 2.5px; }   /* its 2.5px gold border + 1px inside */
+.pay { --ring: 3px; --ring-over: 2px; }           /* its 2px gold border + 1px inside */
+#toCheckout, #rvPrice { --ring: 3px; --ring-a: rgba(201, 151, 59, .35); --ring-b: #B8862F; --ring-c: #E2B04F; } /* cream, no border: a rich gold light traces the edge */
+#rvPrice::after { animation-duration: 3.4s; }
+@keyframes goldrun { to { --run: 360deg; } }
+.v3-cta > span[aria-hidden], #dpopGo > span[aria-hidden] { display: inline-block; animation: nudge 1.5s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .v3-cta::after, .pay::after, #toCheckout::after, #rvPrice::after { animation: none; opacity: 0; }
+  .v3-cta > span[aria-hidden], #dpopGo > span[aria-hidden] { animation: none; }
+}

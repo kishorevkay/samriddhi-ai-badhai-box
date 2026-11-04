@@ -133,7 +133,7 @@
       S = clamp(W / 1200, 0.72, 1.12);
 
       if (W >= 720) { RG.cx = W * 0.8; RG.cy = H * 0.78; RG.R = clamp(Math.min(W * 0.17, H * 0.36), 130, 240); }
-      else { RG.cx = W * 0.7; RG.cy = H * 0.86; RG.R = clamp(W * 0.3, 100, 180); }
+      else { RG.cx = W * 0.78; RG.cy = H * 0.88; RG.R = clamp(W * 0.27, 90, 160); } // phones: further into its corner, clear of the corner lotus
 
       // hanging strings
       strands = [];
@@ -207,7 +207,8 @@
       bctx.fillRect(0, 0, W, H);
 
       // faint lotus peeking from bottom-left
-      var Lr = clamp(Math.min(W, H) * 0.46, 120, 340), ox = -W * 0.01, oy = H + 6;
+      // phones: a smaller lotus, so it and the bottom-right rangoli never cross (they did by ~50px at 390px wide)
+      var Lr = W < 720 ? clamp(Math.min(W, H) * 0.3, 90, 340) : clamp(Math.min(W, H) * 0.46, 120, 340), ox = -W * 0.01, oy = H + 6;
       var a0 = -Math.PI * 0.53, a1 = Math.PI * 0.03, n = 6, i;
       bctx.lineCap = "round";
       bctx.lineWidth = 1;

@@ -290,8 +290,13 @@
     card.addEventListener("pointerleave", function(){ card.style.transform = ""; });
   }
 
-  /* step 1 · who */
-  document.querySelectorAll(".who").forEach(function(c){ tilt(c); c.addEventListener("click", function(){ if (state.mode !== c.dataset.mode) detailsSaved = false; state.mode = c.dataset.mode; burst(c, 8); later(function(){ openDetails(c); }, 180); }); });
+  /* step 1 · who: straight on to the learning areas; the details pop-up comes later, from the box screen (Kish, 4 Nov) */
+  document.querySelectorAll(".who").forEach(function(c){ tilt(c); c.addEventListener("click", function(){
+    if (state.mode !== c.dataset.mode) detailsSaved = false;
+    state.mode = c.dataset.mode; burst(c, 8);
+    $("#domTitle").textContent = state.mode === "other" ? "What would they like to learn?" : "What would you like to learn?";
+    later(function(){ go("domain"); }, 180);
+  }); });
 
   /* ---------- details pop-up: right after the who-pick. "Me" = your details; "Someone you love" = theirs + yours ----------
      Continue validates, saves and moves on to the domains; checkout later shows them as a summary with "Edit details". */
@@ -303,7 +308,7 @@
     $("#giftFields").hidden = !other;
     $("#selfLegend").className = other ? "" : "sr-only";
     $("#selfLine").hidden = other;
-    $("#dpopGo").innerHTML = dThen === "checkout" ? "Save details" : 'Continue <span aria-hidden="true">→</span>';
+    $("#dpopGo").innerHTML = dThen === "checkout" && leadId ? "Save details" : 'Continue <span aria-hidden="true">→</span>'; // "Save" only when editing saved details
     $("#dpopHint").textContent = ""; $("#dpopHint").classList.remove("err");
     dform.querySelectorAll(".bad").forEach(function(x){ x.classList.remove("bad"); });
     if (!leadId){ $("#consent").checked = false; consentAt = ""; $("#consent").closest(".consent").classList.remove("bad"); } // unticked until they've continued once
@@ -510,7 +515,11 @@
     $("#formHint").textContent = ""; $("#formHint").classList.remove("err");
     go("checkout");
   }
-  $("#toCheckout").addEventListener("click", showCheckout);
+  // from the box: "Get my AI Badhaai Box" or the ₹249 card opens the details pop-up (Me: yours; Someone I love: theirs + yours),
+  // whose Continue goes on to checkout; once details are saved with the tick, both go straight to checkout
+  function fromBox(e){ if (leadId && detailsSaved && $("#consent").checked) showCheckout(); else openDetails(e.currentTarget, "checkout"); }
+  $("#toCheckout").addEventListener("click", fromBox);
+  $("#rvPrice").addEventListener("click", fromBox);
   $("#changeSel").addEventListener("click", function(){ go("domain"); });
   $("#editDetails").addEventListener("click", function(e){ openDetails(e.currentTarget, "checkout"); });
   // same rules as api/lead.js (it drops < > and control characters, and emails over 120 characters), so nothing accepted here is refused there
@@ -528,7 +537,7 @@
       return;
     }
     // payment happens on Razorpay's page; give the "pay" save up to 0.6 s to leave first (keepalive alone was cut off in some WebKit runs)
-    saveResume();
+    wentToPay = true;
     Promise.race([sendLead("pay"), new Promise(function(r){ setTimeout(r, 600); })]).then(function(){ location.href = PAY_URL; });
   });
   // after-payment screen, kept for when Razorpay redirects back (not wired yet)
@@ -541,7 +550,8 @@
     later(function(){ doneBox.classList.remove("open"); }, 600);
     later(function(){ doneBox.classList.add("tied"); bump(doneBox); burst(doneBox, 14); }, 1150);
   }
-  $("#again").addEventListener("click", function(){ try { sessionStorage.removeItem(RESUME); } catch (e) {} state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; savedDetails = null; picksByDomain = {}; dform.reset(); go("who"); });
+  function resetFlow(){ state.domain = null; state.mode = null; leadId = ""; consentAt = ""; detailsSaved = false; savedDetails = null; picksByDomain = {}; dform.reset(); $("#consent").checked = false; go("who"); }
+  $("#again").addEventListener("click", resetFlow);
 
   /* ---------- hero background: the living rangoli (v6: stars, click-glow rangoli, corner lotus) with drifting embers (v2) above it.
      Init order matters: each inserts its canvas as the first child, so embers first, rangoli second puts embers on top. */
@@ -601,35 +611,20 @@
     requestAnimationFrame(tick);
   })();
 
-  /* ---------- back from Razorpay: browsers usually reload the page, which used to drop the visitor on the homepage. So the
-     checkout is saved for this tab just before the redirect (sessionStorage: this tab only, gone when it closes) and reopened
-     when they come back with Back. ---------- */
-  var RESUME = "badhaai:checkout";
-  function saveResume(){
-    try {
-      var fields = {};
-      ["r-name", "r-phone", "r-email", "note", "g-name", "g-phone", "g-email"].forEach(function(id){ var el = document.getElementById(id); if (el) fields[id] = el.value; });
-      sessionStorage.setItem(RESUME, JSON.stringify({ t: Date.now(), leadId: leadId, mode: state.mode, domain: state.domain.id, picks: state.picks, details: savedDetails, fields: fields }));
-    } catch (e) {}
-  }
-  function resumeCheckout(){
+  /* ---------- back from Razorpay lands on the homepage, not on the payment screen (Kish, 4 Nov). A page the browser restores from
+     its back/forward cache still has the builder open on checkout, so it's closed and the flow starts fresh; a page reloaded on Back
+     starts fresh anyway, but browsers put the old scroll position back, so both go to the top. ---------- */
+  var wentToPay = false;
+  function toTop(){ scrollTo({ top: 0, left: 0, behavior: "instant" }); } // instant: the page's CSS scroll-behavior is smooth
+  function backHome(){ wentToPay = false; if (!builder.hidden) close(); resetFlow(); toTop(); requestAnimationFrame(toTop); } // again after closing's layout shift
+  addEventListener("pageshow", function(e){ if (e.persisted && wentToPay) backHome(); });
+  // the browser stores the restore-scroll choice with the history entry when the page is left, so it's set from the start
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  (function(){
     var nav = performance.getEntriesByType ? performance.getEntriesByType("navigation")[0] : null;
-    if (!nav || nav.type !== "back_forward") return;
-    var r = null; try { r = JSON.parse(sessionStorage.getItem(RESUME) || "null"); } catch (e) {}
-    var d = r && DOMAINS.filter(function(x){ return x.id === r.domain; })[0];
-    if (!d || !r.leadId || !r.details || Date.now() - r.t > 6 * 3600 * 1000) return;
-    Object.keys(r.fields || {}).forEach(function(id){ var el = document.getElementById(id); if (el) el.value = r.fields[id]; });
-    state.mode = r.mode; state.domain = d; leadId = r.leadId; savedDetails = r.details; consentAt = r.details.consentAt || ""; detailsSaved = true;
-    $("#consent").checked = true; // they ticked it before paying; the saved details carry consent
-    // the saved picks, matched back to the pool items (Swap compares items by identity); a stale or partial set draws a fresh box
-    var pools = { short: d.short, ai: BOX.ai, free: d.free, flagship: d.flagship }, picks = {};
-    Object.keys(BOX.pick).forEach(function(k){ picks[k] = ((r.picks && r.picks[k]) || []).map(function(x){ return pools[k].filter(function(p){ return (p.t || p) === (x.t || x); })[0]; }).filter(Boolean); });
-    if (Object.keys(BOX.pick).every(function(k){ return picks[k].length === BOX.pick[k]; })) picksByDomain[d.id] = picks;
-    $("#domTitle").textContent = state.mode === "other" ? "What would they like to learn?" : "What would you like to learn?";
-    renderReveal(); document.querySelectorAll("#rvGroups .group").forEach(function(el){ el.classList.add("in"); });
-    open(); showCheckout();
-  }
-  if (new URLSearchParams(location.search).get("screens") !== "1") resumeCheckout();
+    if (nav && nav.type === "back_forward"){ toTop(); addEventListener("load", function(){ toTop(); requestAnimationFrame(toTop); }); }
+  })();
+  try { sessionStorage.removeItem("badhaai:checkout"); } catch (e) {} // left by the 4 Nov build that reopened checkout instead
 
   /* ---------- ?screens=1: every builder step laid out on one static page, for importing into Figma ---------- */
   if (new URLSearchParams(location.search).get("screens") === "1") (function(){
